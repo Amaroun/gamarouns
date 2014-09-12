@@ -6,7 +6,7 @@
 EAPI="4"
 
 DESCRIPTION="C++ header-only serialization library"
-HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
+HOMEPAGE="http://uscilab.github.io/cereal/"
 
 SRC_URI="https://codeload.github.com/USCiLab/cereal/tar.gz/v1.0.0 -> ${P}.tar.gz"
 
@@ -18,16 +18,9 @@ IUSE=""
 DEPEND=""
 RDEPEND="$DEPEND"
 
-S="${WORKDIR}/${P}"
-
 src_unpack() {
 	unpack ${A}
 }
-
-#src_compile() {
-#	cd src
-#	emake || die "${P} could not be compiled"
-#}
 
 src_install() {
 	insinto /usr/include
