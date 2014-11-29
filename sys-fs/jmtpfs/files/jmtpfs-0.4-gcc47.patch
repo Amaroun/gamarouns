@@ -1,0 +1,10 @@
+--- jmtpfs-0.4/src/jmtpfs.cpp
++++ jmtpfs-0.4/src/jmtpfs.cpp
+@@ -32,6 +32,7 @@
+ #include <sstream>
+ #include <iomanip>
+ #include <assert.h>
++#include <unistd.h>
+ 
+ #define JMTPFS_VERSION "0.4"
+ 
