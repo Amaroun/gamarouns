@@ -30,7 +30,7 @@ DEPEND=">=sys-devel/gcc-4.6
 RDEPEND="app-eselect/eselect-opencl
 	media-libs/mesa
 	sys-devel/clang
-	>=sys-devel/llvm-3.3
+	>=sys-devel/llvm-3.5
 	x11-libs/libdrm
 	x11-libs/libXext
 	x11-libs/libXfixes"
