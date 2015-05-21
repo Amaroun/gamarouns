@@ -8,12 +8,12 @@ PYTHON_COMPAT=( python{2_7,3_3,3_4} )
 PYTHON_REQ_USE="sqlite,xml"
 PLOCALES="cs de en es fr it pt ru tr zh_CN"
 
-inherit eutils l10n python-single-r1
+inherit eutils l10n python-single-r1 versionator
 
 DESCRIPTION="A full featured Python IDE using PyQt4 and QScintilla"
 HOMEPAGE="http://eric-ide.python-projects.org/"
 
-SLOT="6"
+SLOT=$(get_major_version)
 MY_PV=${PV/_rc/-RC}
 MY_P=${PN}${SLOT}-${MY_PV}
 
@@ -54,7 +54,7 @@ src_prepare() {
 	rm -f eric/APIs/Ruby/Ruby-*.api
 
 	# Delete internal copies of dev-python/chardet and dev-python/pygments
-	rm -fr eric/ThirdParty/{CharDet,Pygments}
+	rm -fr eric/ThirdParty
 
 	# Delete internal copy of dev-python/coverage
 	rm -fr eric/DebugClients/Python{,3}/coverage
