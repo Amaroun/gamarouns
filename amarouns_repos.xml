@@ -4,7 +4,7 @@
 <repo quality="experimental" status="official">
     <name>gamarouns</name>
     <description>Bits and pieces missing in gentoo or layman repos I need</description>
-    <homepage>http://git.overlays.gentoo.org/gitweb/?p=proj/gnome.git;a=summary</homepage>
+    <homepage>https://bitbucket.org/amaroun/gamarouns</homepage>
     <owner type="project">
         <email>vit.kasal@gmail.com</email>
         <name>amaroun</name>
