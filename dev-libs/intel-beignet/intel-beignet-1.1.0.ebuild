@@ -44,7 +44,7 @@ src_prepare() {
 	# disable tests for now
 	sed -i "s/ADD_SUBDIRECTORY(utests)/#ADD_SUBDIRECTORY(utests)/" CMakeLists.txt || die "sed failed"
 	# disable debian multiarch
-	epatch "${FILESDIR}"/no-debian-multiarch.patch
+	epatch "${FILESDIR}"/no-debian-multiarch-1.0.3.patch
 
 	echo "${IBEIGNET_DIR}/lib/beignet/libcl.so" > intelbeignet.icd
 	cmake-utils_src_prepare
