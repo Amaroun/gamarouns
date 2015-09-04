@@ -7,7 +7,7 @@ EAPI=5
 AUTOTOOLS_IN_SOURCE_BUILD=1
 AUTOTOOLS_AUTORECONF=1
 
-PYTHON_COMPAT=( python{2_5,2_6,2_7,3_1,3_2,3_3} )
+PYTHON_COMPAT=( python{2_5,2_6,2_7,3_1,3_2,3_3,3_4} )
 DISTUTILS_OPTIONAL="true"
 
 inherit autotools-utils distutils-r1
@@ -24,6 +24,7 @@ IUSE="doc python static-libs"
 
 DEPEND="python? ( ${PYTHON_DEPS} )"
 RDEPEND="${DEPEND}"
+DEPEND="$DEPEND sys-devel/autoconf-archive"
 
 PATCHES=( "${FILESDIR}"/strip_py_from_mkfile.patch )
 #PATCHES=( "${FILESDIR}"/strip_py_from_mkfile.patch  "${FILESDIR}"/cxx11.patch )
