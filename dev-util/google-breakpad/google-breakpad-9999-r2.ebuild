@@ -2,6 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
+EAPI="5"
 inherit base git-r3 autotools flag-o-matic
 
 DESCRIPTION="An open-source multi-platform crash reporting system"
@@ -20,10 +21,12 @@ DEPEND=""
 src_unpack() {
 	git-r3_src_unpack
 	
-	git-r3_fetch https://chromium.googlesource.com/external/linux-syscall-support/lss
-	git-r3_checkout https://chromium.googlesource.com/external/linux-syscall-support/lss ${EGIT_CHECKOUT_DIR}/src/third_party/lss
+	git-r3_fetch https://chromium.googlesource.com/linux-syscall-support
+	git-r3_checkout https://chromium.googlesource.com/linux-syscall-support ${EGIT_CHECKOUT_DIR}/src/third_party/lss
 }
 src_prepare() {
+        epatch "${FILESDIR}/${PN}-README_extension_installPROGRAMS.patch"
+
 	eautoreconf
 	eautomake
 }
@@ -48,6 +51,4 @@ src_install() {
 	doins src/client/linux/crash_generation/*.h
 	insinto /usr/include/breakpad/client/linux/dump_writer_common
 	doins src/client/linux/dump_writer_common/*.h
-	insinto /usr/include/breakpad/processor
-	doins src/processor/scoped_ptr.h
 }
