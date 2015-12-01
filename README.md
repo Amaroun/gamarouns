@@ -40,7 +40,7 @@ or you can install overaly directly by url:
 ```
 #!bash
 
- layman -o  -f -a gamarouns
+ layman -o https://bitbucket.org/amaroun/gamarouns/raw/default/amarouns_repos.xml -f -a gamarouns
 
 ```
 
