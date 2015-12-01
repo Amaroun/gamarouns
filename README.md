@@ -47,11 +47,8 @@ or you can install overaly directly by url:
 
 ### Contribution guidelines ###
 
-* Writing tests
-* Code review
-* Other guidelines
+I have no immediate plans for other contributors at the moment, you may contact me if you would get some proposal.
 
 ### Who do I talk to? ###
 
-* Repo owner or admin
-* Other community or team contact
+Repo owner
