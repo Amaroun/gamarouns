@@ -49,10 +49,10 @@ src_configure() {
 
 	use debug && append-flags -ggdb
 	local mycmakeargs=""
-	mycmakeargs="${mycmakeargs}
+	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DLUXRAYS_DISABLE_OPENCL=OFF
-		  -DCMAKE_INSTALL_PREFIX=/usr"
+		  -DCMAKE_INSTALL_PREFIX=/usr")
 	cmake-utils_src_configure
 }
 
@@ -60,7 +60,8 @@ src_install() {
 #	cmake-utils_src_install
 	dobin "${CMAKE_BUILD_DIR}"/bin/luxmark
 	dodoc AUTHORS.txt || die
-	insinto /usr/sahre/luxmark
+	insinto /usr/share/luxmark
+	doins -r "${S}"/scenes
 	
 	# installing API(s) docs
 #	if use doc; then
