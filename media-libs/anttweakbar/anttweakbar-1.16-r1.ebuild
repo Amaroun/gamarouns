@@ -7,7 +7,7 @@ EAPI="4"
 DESCRIPTION="A library that adds an easy GUI into OpenGL applications to interactively tweak them on-screen"
 HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
 
-SRC_URI="http://garr.dl.sourceforge.net/project/anttweakbar/AntTweakBar_116.zip -> ${P}.zip"
+SRC_URI="http://freefr.dl.sourceforge.net/project/anttweakbar/AntTweakBar_116.zip -> ${P}.zip"
 
 KEYWORDS="~x86 ~amd64"
 LICENSE="ZLIB"
