@@ -18,6 +18,7 @@ IUSE="debug opencl"
 
 DEPEND=">=dev-libs/boost-1.43
 	media-libs/freeimage
+	media-libs/openimageio
 	virtual/opengl
 	opencl? ( virtual/opencl )"
 
