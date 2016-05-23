@@ -17,17 +17,13 @@ KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 debug"
 
 RDEPEND=">=dev-libs/boost-1.43[python]
-	media-libs/openexr
-	media-libs/tiff:=
-	media-libs/libpng:=
-	media-libs/libjpeg-turbo
-	media-libs/ilmbase
-	>=media-libs/freeimage-3.15.0
 	media-libs/openimageio
 	media-libs/slg[debug?]
 	media-libs/luxcore[debug?]
 	virtual/opengl
 	virtual/opencl
+	media-libs/freeglut
+	media-libs/glew
 	~media-libs/luxrays-${PV}[debug?]
 	"
 DEPEND="${RDEPEND}
