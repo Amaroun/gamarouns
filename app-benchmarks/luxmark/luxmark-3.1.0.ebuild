@@ -4,32 +4,28 @@
 
 EAPI="5"
 
-inherit cmake-utils flag-o-matic mercurial 
-#python-single-r1
+inherit cmake-utils flag-o-matic mercurial versionator
 
 DESCRIPTION="A GPL OpenCL Benchmark."
 HOMEPAGE="http://www.luxmark.info"
 EHG_REPO_URI="https://bitbucket.org/luxrender/luxmark"
 
-re="(^[0-9]+.[0-9]+)"
-
-if [[ ! "$PV" == "9999" ]] ; then
-	if [[ $PV =~ $re ]] ; then
-		VER_MAJ_MIN=${BASH_REMATCH[1]}
-		EHG_REVISION="${PN}_v${VER_MAJ_MIN}"
-	else
-		die
-	fi
+if [[ "$PV" == "9999" ]] ; then
+	SRC_URI="https://bytebucket.org/luxrender/lux/raw/tip/luxrender.svg"
+else
+	VER_MAJ_MIN="$(get_version_component_range 1-2)"
+	EHG_REVISION="${PN}_v${VER_MAJ_MIN}"
+	SRC_URI="https://bytebucket.org/luxrender/lux/raw/203f2dad3260679802868560f1dac3c9bfee51a1/luxrender.svg"
 fi
 
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 debug"
+IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
-#	media-libs/luxcore[debug?]
-#	~media-libs/luxrays-${PV}[debug?]
 RDEPEND=">=dev-libs/boost-1.43[python]
+	media-libs/luxcore[debug?,opencl=]
+	media-libs/luxrays[debug?,opencl=]
 	media-libs/openimageio
 	media-libs/slg[debug?]
 	virtual/opengl
@@ -42,20 +38,11 @@ DEPEND="${RDEPEND}
 	sys-devel/flex
 	"
 
-#	doc? ( >=app-doc/doxygen-1.5.7[-nodot] )"
-#PDEPEND="blender? ( =media-plugins/luxblend25-${PV} )"
-
 src_prepare() {
-	re="^([0-9]+).([0-9]+)"
-	if [[ $PV =~ $re ]] ; then
-		if [ "${BASH_REMATCH[1]}" -lt 3 ] || { [ "${BASH_REMATCH[1]}" -eq 3 ] && [ "${BASH_REMATCH[2]}" -le 1 ]; }; then
-			epatch "${FILESDIR}/${PN}-slg_renderengine_h_location.patch"
-		fi
-	fi
+	epatch "${FILESDIR}/${PN}-slg_renderengine_h_location.patch"
 }
 
 src_configure() {
-#	python-single-r1_pkg_setup
 	use cpu_flags_x86_sse && append-flags "-msse -DLUX_USE_SSE"
         use cpu_flags_x86_sse2 && append-flags "-msse2"
 
@@ -74,13 +61,10 @@ src_install() {
 	dodoc AUTHORS.txt || die
 	insinto /usr/share/luxmark
 	doins -r "${S}"/scenes
+
+	doicon ${DISTDIR}/luxrender.svg
+
 	
-	# installing API(s) docs
-#	if use doc; then
-#		pushd "${S}"/doxygen > /dev/null
-#		doxygen doxygen.template
-#		dohtml html/* || die "Couldn't install API docs"
-#		popd > /dev/null
-#	fi
+	make_desktop_entry "${PN}" "${PN}" "gparted" "Utility" "Path=/usr/share/${PN}"
 
 }
