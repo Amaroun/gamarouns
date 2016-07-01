@@ -24,10 +24,10 @@ KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
 RDEPEND=">=dev-libs/boost-1.43[python]
-	media-libs/luxcore[debug?,opencl=]
-	media-libs/luxrays[debug?,opencl=]
+	>=media-libs/luxcore-3010.0.0[debug?,opencl=]
+	>=media-libs/luxrays-3010.0.0[debug?,opencl=]
 	media-libs/openimageio
-	media-libs/slg[debug?]
+	>=media-libs/slg-3010.0.0[debug?]
 	virtual/opengl
 	virtual/opencl
 	media-libs/freeglut
