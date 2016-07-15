@@ -1,0 +1,12 @@
+diff -Nurb /tmp/a/setup.py /tmp/b/setup.py
+--- /tmp/a/setup.py	2016-07-15 02:40:57.940391713 +0200
++++ /tmp/b/setup.py	2016-07-15 02:41:50.984388694 +0200
+@@ -15,8 +15,6 @@
+              'bin/ranking_viewer',
+              'bin/solvexport',
+              'bin/speaker',
+-             'bin/test',
+-             'bin/wwfexport',
+              ],
+     package_data={'bosco': ['templates/*.html',
+                             'templates/*.tex',
