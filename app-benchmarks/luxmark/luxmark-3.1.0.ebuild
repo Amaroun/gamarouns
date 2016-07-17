@@ -65,6 +65,6 @@ src_install() {
 	doicon ${DISTDIR}/luxrender.svg
 
 	
-	make_desktop_entry "${PN}" "${PN}" "luxmark" "Utility" "Path=/usr/share/${PN}"
+	make_desktop_entry "${PN}" "${PN}" "luxrender" "Utility" "Path=/usr/share/${PN}"
 
 }
