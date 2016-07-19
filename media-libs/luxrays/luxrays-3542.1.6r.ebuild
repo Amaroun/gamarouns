@@ -48,7 +48,6 @@ if [[ "$PV" == "9999" ]] ; then
 	SRC_URI="https://bytebucket.org/luxrender/lux/raw/tip/luxrender.svg"
 else
 	EHG_REVISION="$(get_hg_revision)"
-	einfo "Using HG Tag: $EHG_REVISION"
 fi
 
 
@@ -79,6 +78,8 @@ src_configure() {
 }
 
 src_compile() {
+	cmake-utils_src_make luxcore
+	cmake-utils_src_make smallluxgpu
 	cmake-utils_src_make luxrays
 }
 
@@ -86,8 +87,12 @@ src_install() {
 	dodoc AUTHORS.txt
 
 	insinto /usr/include
+	doins -r include/luxcore
+	doins -r include/slg
 	doins -r include/luxrays
 
+	dolib.a lib/libluxcore.a
+	dolib.a lib/libsmallluxgpu.a
 	dolib.a lib/libluxrays.a
 }
 
