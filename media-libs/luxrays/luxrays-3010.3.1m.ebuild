@@ -66,7 +66,6 @@ CMAKE_IN_SOURCE_BUILD=1
 
 src_prepare() {
 	einfo "Using revision ${EHG_REVISION}"
-	epatch "${FILESDIR}/${PN}-no_math_function_defines.patch"
 }
 
 src_configure() {
