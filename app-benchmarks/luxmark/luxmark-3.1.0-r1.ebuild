@@ -24,10 +24,10 @@ KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
 RDEPEND=">=dev-libs/boost-1.43[python]
-	>=media-libs/luxrays-3010.0.0[debug?,opencl=]
+	=media-libs/luxrays-3010.3.1m[debug?,opencl=]
 	media-libs/openimageio
 	virtual/opengl
-	virtual/opencl
+	opencl? ( virtual/opencl )
 	media-libs/freeglut
 	media-libs/glew
 	"
@@ -36,9 +36,6 @@ DEPEND="${RDEPEND}
 	sys-devel/flex
 	"
 
-src_prepare() {
-	epatch "${FILESDIR}/${PN}-slg_renderengine_h_location.patch"
-}
 
 src_configure() {
 	use cpu_flags_x86_sse && append-flags "-msse -DLUX_USE_SSE"
@@ -48,8 +45,10 @@ src_configure() {
 	local mycmakeargs=""
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
-		  -DLUXRAYS_DISABLE_OPENCL=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
+	!use opencl && mycmakeargs=("${mycmakeargs}
+		  -DLUXRAYS_DISABLE_OPENCL=OFF")
+
 	cmake-utils_src_configure
 }
 
