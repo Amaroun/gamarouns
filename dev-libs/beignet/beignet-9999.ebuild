@@ -21,7 +21,7 @@ if [[ "${PV}" == "9999" ]]; then
 	KEYWORDS=""
 else
 	KEYWORDS="~amd64 ~x86"
-	SRC_URI="https://01.org/sites/default/files/${P/intel-/}-source.tar.gz -> ${P}.tar.gz"
+	SRC_URI="https://01.org/sites/default/files/${P}-source.tar.gz -> ${P}.tar.gz"
 	S=${WORKDIR}/Beignet-${PV}-Source
 fi
 
@@ -38,20 +38,17 @@ RDEPEND="app-eselect/eselect-opencl
 pkg_setup() {
 	python_setup
 }
-IBEIGNET_DIR=/usr/$(get_libdir)/OpenCL/vendors/intel-beignet
+BEIGNET_DIR=/usr/$(get_libdir)/OpenCL/vendors/intel-beignet
 
 src_prepare() {
 	# disable tests for now
 	sed -i "s/ADD_SUBDIRECTORY(utests)/#ADD_SUBDIRECTORY(utests)/" CMakeLists.txt || die "sed failed"
-	# disable debian multiarch
-	epatch "${FILESDIR}"/no-debian-multiarch-1.0.3.patch
 
-	echo "${IBEIGNET_DIR}/lib/beignet/libcl.so" > intelbeignet.icd
 	cmake-utils_src_prepare
 }
 src_configure() {
 
-	local mycmakeargs=( -DCMAKE_INSTALL_PREFIX="${IBEIGNET_DIR}/" )
+	local mycmakeargs=( -DCMAKE_INSTALL_PREFIX="${BEIGNET_DIR}/" )
 
 	cmake-utils_src_configure
 }
@@ -63,8 +60,8 @@ src_install() {
 
 	dodoc -r  docs
 
-	dosym lib/beignet/libcl.so "${IBEIGNET_DIR}"/libOpenCL.so.1
-	dosym lib/beignet/libcl.so "${IBEIGNET_DIR}"/libOpenCL.so
-	dosym lib/beignet/libcl.so "${IBEIGNET_DIR}"/libcl.so.1
-	dosym lib/beignet/libcl.so "${IBEIGNET_DIR}"/libcl.so
+	dosym lib64/beignet/libcl.so "${BEIGNET_DIR}"/libOpenCL.so.1
+	dosym lib64/beignet/libcl.so "${BEIGNET_DIR}"/libOpenCL.so
+	dosym lib64/beignet/libcl.so "${BEIGNET_DIR}"/libcl.so.1
+	dosym lib64/beignet/libcl.so "${BEIGNET_DIR}"/libcl.so
 }

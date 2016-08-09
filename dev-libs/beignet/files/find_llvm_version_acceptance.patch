@@ -1,0 +1,25 @@
+diff -Nurb Beignet-1.1.2-a/CMake/FindLLVM.cmake Beignet-1.1.2-b/CMake/FindLLVM.cmake
+--- Beignet-1.1.2-a/CMake/FindLLVM.cmake	2015-12-18 07:39:59.000000000 +0100
++++ Beignet-1.1.2-b/CMake/FindLLVM.cmake	2016-08-08 17:38:48.050812121 +0200
+@@ -38,7 +38,11 @@
+     if (LLVM_VERSION_NODOT VERSION_EQUAL LLVM_FIND_VERSION_NODOT)
+       message(STATUS "find stable LLVM version ${LLVM_VERSION}")
+     else (LLVM_VERSION_NODOT VERSION_EQUAL LLVM_FIND_VERSION_NODOT)
+-      message(STATUS "find unstable LLVM version ${LLVM_VERSION}")
++      if (LLVM_FIND_VERSION_EXACT)
++        message(STATUS "found LLVM ${LLVM_VERSION}, newer and potentially unstable to requested version ${LLVM_FIND_VERSION}")
++      else (FIND_LLVM_VERSION_EXACT)
++        message(FATAL_ERROR, "found unstable LLVM ${LLVM_VERSION} required ${LLVM_FIND_VERSION}")
++      endif (FIND_LLVM_VERSION_EXACT)
+     endif (LLVM_VERSION_NODOT VERSION_EQUAL LLVM_FIND_VERSION_NODOT)
+     add_definitions("-DLLVM_${LLVM_VERSION_NODOT}")
+   endif (LLVM_VERSION_NODOT VERSION_LESS LLVM_FIND_VERSION_NODOT)
+@@ -99,7 +103,7 @@
+   OUTPUT_VARIABLE LLVM_SYSTEM_LIBS_ORIG
+   OUTPUT_STRIP_TRAILING_WHITESPACE
+ )
+-string(REGEX REPLACE " *\n" "" LLVM_SYSTEM_LIBS ${LLVM_SYSTEM_LIBS_ORIG})
++string(REGEX REPLACE " *\n" "" LLVM_SYSTEM_LIBS "${LLVM_SYSTEM_LIBS_ORIG}")
+ endif (LLVM_VERSION_NODOT VERSION_GREATER 34)
+ 
+ macro(add_one_lib name)
