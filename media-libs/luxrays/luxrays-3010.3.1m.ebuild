@@ -56,11 +56,13 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="debug opencl"
 
-DEPEND=">=dev-libs/boost-1.43
+RDEPEND=">=dev-libs/boost-1.43
 	media-libs/openimageio
 	media-libs/embree
 	virtual/opengl
 	opencl? ( virtual/opencl )"
+
+DEPEND="${RDEPEND}"
 
 CMAKE_IN_SOURCE_BUILD=1
 
