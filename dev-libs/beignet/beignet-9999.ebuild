@@ -12,7 +12,7 @@ CMAKE_BUILD_TYPE="Release"
 DESCRIPTION="The Beignet GPGPU System for Intel Ivybridge GPUs"
 HOMEPAGE="http://wiki.freedesktop.org/www/Software/Beignet/"
 
-LICENSE="GPL-2"
+LICENSE="GPL-2.1+"
 SLOT="0"
 
 if [[ "${PV}" == "9999" ]]; then
