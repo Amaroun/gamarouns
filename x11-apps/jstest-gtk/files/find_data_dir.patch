@@ -1,6 +1,6 @@
 diff -Nurb /tmp/jstest/a/src/main.cpp /tmp/jstest/b/src/main.cpp
 --- /tmp/jstest/a/src/main.cpp	2016-11-09 17:15:16.024622360 +0100
-+++ /tmp/jstest/b/src/main.cpp	2016-11-09 17:55:44.977798839 +0100
++++ /tmp/jstest/b/src/main.cpp	2016-11-09 18:25:28.995928460 +0100
 @@ -200,12 +200,31 @@
      char* c_prefix = br_find_exe_dir(NULL);
      if (!c_prefix)
@@ -22,7 +22,7 @@ diff -Nurb /tmp/jstest/a/src/main.cpp /tmp/jstest/b/src/main.cpp
 +      {
 +        free(c_prefix);
 +        free(c_exe);
-+        throw std::runtime_error("Error: Couldn't find executable path");
++        throw std::runtime_error("Error: Couldn't find data dir");
 +      }
 +
 +      std::string prefix = c_data_prefix;
