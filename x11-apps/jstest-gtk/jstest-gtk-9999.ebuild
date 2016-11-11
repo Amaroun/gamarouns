@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=5
+EAPI=6
 
 PYTHON_COMPAT=( python2_7 )
 
@@ -30,7 +30,8 @@ DEPEND="${RDEPEND}
 	dev-util/cmake"
 
 src_prepare() {
-	epatch ${FILESDIR}/find_data_dir.patch
+	epatch "${FILESDIR}/find_data_dir.patch"
+	default
 }
 src_configure() {
 	cmake-utils_src_configure
