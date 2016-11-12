@@ -4,11 +4,11 @@
 
 EAPI=5
 
-inherit subversion cmake-utils
+inherit git-r3 cmake-utils
 
 DESCRIPTION="OpenCL 1.2 implementation for CPUs"
 HOMEPAGE="https://code.google.com/p/freeocl/"
-ESVN_REPO_URI="http://freeocl.googlecode.com/svn/trunk/"
+EGIT_REPO_URI="https://github.com/zuzuf/freeocl.git"
 
 LICENSE="GPL3 LGPL3"
 SLOT="0"
