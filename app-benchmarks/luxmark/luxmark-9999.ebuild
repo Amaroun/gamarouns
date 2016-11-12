@@ -30,6 +30,7 @@ RDEPEND=">=dev-libs/boost-1.43[python]
 	virtual/opencl
 	media-libs/freeglut
 	media-libs/glew
+	app-benchmark/luxmark-scenes
 	"
 DEPEND="${RDEPEND}
 	sys-devel/bison
@@ -57,8 +58,6 @@ src_install() {
 #	cmake-utils_src_install
 	dobin "${CMAKE_BUILD_DIR}"/bin/luxmark
 	dodoc AUTHORS.txt || die
-	insinto /usr/share/luxmark
-	doins -r "${S}"/scenes
 
 	doicon ${DISTDIR}/luxrender.svg
 
