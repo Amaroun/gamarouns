@@ -12,7 +12,7 @@ HOMEPAGE="http://www.luxmark.info"
 DOWNLOAD_VERSION="$(delete_version_separator 2 )"
 
 #SRC_URI="https://bitbucket.org/luxrender/luxmark/downloads/scenes-v3.1beta3.zip"
-SRC_URI="https://bitbucket.org/luxrender/luxmark/downloads/${PN/luxmark-//}-v${DOWNLOAD_VERSION}.zip"
+SRC_URI="https://bitbucket.org/luxrender/luxmark/downloads/${PN/luxmark-/}-v${DOWNLOAD_VERSION}.zip"
 
 LICENSE="GPL-3"
 SLOT="0"
