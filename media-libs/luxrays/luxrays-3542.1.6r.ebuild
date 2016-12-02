@@ -25,9 +25,9 @@ get_hg_revision(){
 		fi
 		(( relevant_versions_count++ ))
 	done
-	
+
 	local last_revision="$(get_version_component_range $"relevant_versions_count")"
-		
+
 	case "$last_revision" in
 	m)
 		echo "luxmark_v$(get_version_component_range 2-$((--relevant_versions_count )))"
@@ -41,7 +41,7 @@ get_hg_revision(){
 	esac
 
 	return 0
-	
+
 }
 
 if [[ "$PV" == "9999" ]] ; then
