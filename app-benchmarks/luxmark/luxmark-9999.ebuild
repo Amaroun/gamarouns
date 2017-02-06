@@ -49,8 +49,11 @@ src_configure() {
 	local mycmakeargs=""
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
-		  -DLUXRAYS_DISABLE_OPENCL=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
+
+       !use opencl && mycmakeargs=("${mycmakeargs}
+                  -DLUXRAYS_DISABLE_OPENCL=ON")
+
 	cmake-utils_src_configure
 }
 
