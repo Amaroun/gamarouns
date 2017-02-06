@@ -72,5 +72,5 @@ src_install() {
 	done
 
 	# Create symlinks to newest. Maybe this should be switchable?
-	dosym "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-1.2/" "/usr/$(get_libdir)/OpenCL/global/include/CL"
+	dosym "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-${CL_ABIS[-1]}/" "/usr/$(get_libdir)/OpenCL/global/include/CL"
 }
