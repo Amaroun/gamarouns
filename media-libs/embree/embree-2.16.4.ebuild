@@ -8,7 +8,14 @@ inherit cmake-utils
 
 DESCRIPTION="Embree ray tracing kernels by intel"
 HOMEPAGE="https://embree.github.io"
-SRC_URI="https://github.com/embree/embree/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+
+if [[ "$PV" == "9999" ]] ; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/embree/embree.git"
+else
+	SRC_URI="https://github.com/embree/embree/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+fi
+
 
 LICENSE="Apache-2.0"
 SLOT="0"
@@ -24,9 +31,9 @@ DEPEND="${RDEPEND}"
 src_configure() {
 	local mycmakeargs=""
 	if ispc; then
-		mycmakeargs="${mycmakeargs} -DENABLE_ISPC_SUPPORT=ON"
+		mycmakeargs="${mycmakeargs} -DEMBREE_ISPC_SUPPORT=ON"
 	else
-		mycmakeargs="${mycmakeargs} -DENABLE_ISPC_SUPPORT=OFF"
+		mycmakeargs="${mycmakeargs} -DEMBREE_ISPC_SUPPORT=OFF"
 	fi
 	mycmakeargs="${mycmakeargs}
 		  -DCMAKE_INSTALL_PREFIX=/usr
