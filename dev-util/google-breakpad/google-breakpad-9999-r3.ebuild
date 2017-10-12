@@ -20,7 +20,7 @@ DEPEND=""
 
 src_unpack() {
 	git-r3_src_unpack
-	
+
 	git-r3_fetch https://chromium.googlesource.com/linux-syscall-support
 	git-r3_checkout https://chromium.googlesource.com/linux-syscall-support ${EGIT_CHECKOUT_DIR}/src/third_party/lss
 }
@@ -28,11 +28,9 @@ src_prepare() {
 	eautoreconf
 	eautomake
 }
-
-src_compile() {
+src_configure() {
 	append-flags -fPIC 
 	econf
-	emake || die
 }
 
 src_install() {
