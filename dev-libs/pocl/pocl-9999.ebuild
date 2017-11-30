@@ -4,7 +4,7 @@
 
 EAPI=5
 
-inherit git-r3 autotools
+inherit git-r3 cmake-utils
 #cmake-utils
 
 DESCRIPTION="PortableCL: opensource implementation of the OpenCL standard"
@@ -18,7 +18,7 @@ IUSE=""
 
 RDEPEND="dev-libs/ocl-icd
 	>=sys-devel/llvm-3.9[clang]
-	sys-apps/hwloc
+	>=sys-apps/hwloc-1.0
 	>=app-eselect/eselect-opencl-1.1.0-r4"
 DEPEND="${RDEPEND}
 	virtual/pkgconfig"
@@ -37,6 +37,3 @@ pkg_pretend() {
 	fi
 }
 
-src_prepare() {
-	eautoreconf
-}
