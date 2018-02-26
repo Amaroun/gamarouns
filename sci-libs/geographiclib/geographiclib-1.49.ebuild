@@ -26,10 +26,6 @@ DEPEND="python? ( ${PYTHON_DEPS} )"
 RDEPEND="${DEPEND}"
 DEPEND="$DEPEND sys-devel/autoconf-archive"
 
-PATCHES=( "${FILESDIR}"/strip_py_from_mkfile.patch )
-#PATCHES=( "${FILESDIR}"/strip_py_from_mkfile.patch  "${FILESDIR}"/cxx11.patch )
-#PATCHES=( "${FILESDIR}"/cxx11.patch )
-
 
 S="${WORKDIR}/${MY_P%_p[^digit]*}"
 
