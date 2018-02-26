@@ -3,7 +3,7 @@ inherit cmake-utils cmake-multilib
 
 DESCRIPTION="Portable Computing Language"
 HOMEPAGE="http://portablecl.org"
-SRC_URI="http://portablecl.org/downloads/${P}.tar.gz"
+SRC_URI="https://github.com/pocl/pocl/archive/v${PV}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"

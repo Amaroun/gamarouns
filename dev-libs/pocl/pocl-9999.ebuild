@@ -13,11 +13,12 @@ EGIT_REPO_URI="https://github.com/pocl/pocl.git"
 
 SLOT="0"
 LICENSE="MIT"
-KEYWORDS="~amd64"
+KEYWORDS=""
 IUSE=""
 
 RDEPEND="dev-libs/ocl-icd
-	>=sys-devel/llvm-3.9[clang]
+	>=sys-devel/llvm-4.0
+	>=sys-devel/clang-4.0
 	>=sys-apps/hwloc-1.0
 	>=app-eselect/eselect-opencl-1.1.0-r4"
 DEPEND="${RDEPEND}
