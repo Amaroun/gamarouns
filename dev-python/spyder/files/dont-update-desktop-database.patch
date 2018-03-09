@@ -1,0 +1,17 @@
+diff -Nurb /tmp/a/setup.py /tmp/b/setup.py
+--- a/setup.py	2018-02-25 03:08:24.000000000 +0100
++++ b/setup.py	2018-03-09 10:49:28.869007348 +0100
+@@ -111,12 +111,7 @@
+ class MyInstallData(install_data):
+     def run(self):
+         install_data.run(self)
+-        if sys.platform.startswith('linux'):
+-            try:
+-                subprocess.call(['update-desktop-database'])
+-            except:
+-                print("ERROR: unable to update desktop database",
+-                      file=sys.stderr)
++
+ CMDCLASS = {'install_data': MyInstallData}
+ 
+ 
