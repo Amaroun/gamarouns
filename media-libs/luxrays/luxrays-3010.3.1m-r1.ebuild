@@ -54,7 +54,9 @@ fi
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="debug opencl"
+IUSE="debug opencl shared"
+
+REQUIRED_USE="debug? ( shared )"
 
 RDEPEND=">=dev-libs/boost-1.43:=
 	media-libs/openimageio
@@ -64,12 +66,15 @@ RDEPEND=">=dev-libs/boost-1.43:=
 
 DEPEND="${RDEPEND}"
 
-CMAKE_IN_SOURCE_BUILD=1
-
 src_prepare() {
-	einfo "Using revision ${EHG_REVISION}"
+
+	if use shared ; then
+		epatch "${FILESDIR}/${PN}-shared_libs.patch"
+	fi
+
 	default
 }
+
 
 src_configure() {
 	append-flags -fPIC
@@ -97,9 +102,14 @@ src_install() {
 	doins -r include/luxcore
 	doins -r include/slg
 	doins -r include/luxrays
-
-	dolib.a lib/libluxcore.a
-	dolib.a lib/libsmallluxgpu.a
-	dolib.a lib/libluxrays.a
+	if use shared ; then
+		dolib ${BUILD_DIR}/lib/libluxcore.so
+		dolib ${BUILD_DIR}/lib/libsmallluxgpu.so
+		dolib ${BUILD_DIR}/lib/libluxrays.so
+	else
+		dolib.a lib/libluxcore.a
+		dolib.a lib/libsmallluxgpu.a
+		dolib.a lib/libluxrays.a
+	fi
 }
 

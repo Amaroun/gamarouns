@@ -24,7 +24,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
 RDEPEND=">=dev-libs/boost-1.43:=[python]
-	=media-libs/luxrays-3010.3.1m:=[debug?,opencl=]
+	~media-libs/luxrays-3010.3.1m:=[debug?,opencl=]
 	media-libs/openimageio
 	virtual/opengl
 	opencl? ( virtual/opencl )
@@ -42,12 +42,18 @@ src_configure() {
 	use cpu_flags_x86_sse && append-flags "-msse -DLUX_USE_SSE"
         use cpu_flags_x86_sse2 && append-flags "-msse2"
 
-	use debug && append-flags -ggdb
+        if use debug ; then
+		append-flags -ggdb
+		CMAKE_BUILD_TYPE="Debug"
+        else
+		CMAKE_BUILD_TYPE="Release"
+        fi
+
 	local mycmakeargs=""
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
-	!use opencl && mycmakeargs=("${mycmakeargs}
+	! use opencl && mycmakeargs=("${mycmakeargs}
 		  -DLUXRAYS_DISABLE_OPENCL=ON")
 
 	cmake-utils_src_configure
