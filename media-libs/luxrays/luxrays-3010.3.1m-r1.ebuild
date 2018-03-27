@@ -71,6 +71,7 @@ src_prepare() {
 	if use shared ; then
 		epatch "${FILESDIR}/${PN}-shared_libs.patch"
 	fi
+	epatch "${FILESDIR}/${PN}-sanitize_filename_zerochar.patch"
 
 	default
 }

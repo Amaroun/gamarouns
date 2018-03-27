@@ -30,7 +30,7 @@ RDEPEND=">=dev-libs/boost-1.43:=[python]
 	virtual/opencl
 	media-libs/freeglut
 	media-libs/glew
-	app-benchmark/luxmark-scenes
+	app-benchmarks/luxmark-scenes
 	"
 DEPEND="${RDEPEND}
 	sys-devel/bison
@@ -64,7 +64,7 @@ src_install() {
 
 	doicon ${DISTDIR}/luxrender.svg
 
-	
+
 	make_desktop_entry "${PN}" "${PN}" "luxrender" "Utility" "Path=/usr/share/${PN}"
 
 }

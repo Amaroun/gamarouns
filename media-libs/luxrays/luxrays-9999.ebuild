@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="5"
+EAPI="6"
 
 inherit cmake-utils mercurial flag-o-matic versionator
 
@@ -30,7 +30,7 @@ get_hg_revision(){
 
 	case "$last_revision" in
 	m)
-		echo "luxrays_v$(get_version_component_range 2-$((--relevant_versions_count )))"
+		echo "luxmark_v$(get_version_component_range 2-$((--relevant_versions_count )))"
 		;;
 	r)
 		echo "luxrender_v$(get_version_component_range 2-$((--relevant_versions_count )))"
@@ -54,25 +54,39 @@ fi
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE="debug opencl"
+IUSE="debug opencl shared"
 
-DEPEND=">=dev-libs/boost-1.43:=
+REQUIRED_USE="debug? ( shared )"
+
+RDEPEND=">=dev-libs/boost-1.43:=
 	media-libs/openimageio
 	media-libs/embree
 	virtual/opengl
 	opencl? ( virtual/opencl )"
 
-CMAKE_IN_SOURCE_BUILD=1
+DEPEND="${RDEPEND}"
 
 src_prepare() {
-	epatch "${FILESDIR}/${PN}-no_math_function_defines.patch"
+
+        epatch "${FILESDIR}/${P}-no_math_function_defines.patch"
+
+	if use shared ; then
+		epatch "${FILESDIR}/${PN}-shared_libs.patch"
+	fi
+
+	default
 }
+
 
 src_configure() {
 	append-flags -fPIC
         use opencl || append-flags -DLUXRAYS_DISABLE_OPENCL
-	use debug && append-flags -ggdb
-
+	if use debug ; then
+		 append-flags -ggdb
+		CMAKE_BUILD_TYPE="Debug"
+	else
+		CMAKE_BUILD_TYPE="Release"
+	fi
 	use opencl || mycmakeargs=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev )
 	cmake-utils_src_configure
 }
@@ -90,9 +104,14 @@ src_install() {
 	doins -r include/luxcore
 	doins -r include/slg
 	doins -r include/luxrays
-
-	dolib.a lib/libluxcore.a
-	dolib.a lib/libsmallluxgpu.a
-	dolib.a lib/libluxrays.a
+	if use shared ; then
+		dolib ${BUILD_DIR}/lib/libluxcore.so
+		dolib ${BUILD_DIR}/lib/libsmallluxgpu.so
+		dolib ${BUILD_DIR}/lib/libluxrays.so
+	else
+		dolib.a lib/libluxcore.a
+		dolib.a lib/libsmallluxgpu.a
+		dolib.a lib/libluxrays.a
+	fi
 }
 
