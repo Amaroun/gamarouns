@@ -108,9 +108,9 @@ src_install() {
 		dolib ${BUILD_DIR}/lib/libsmallluxgpu.so
 		dolib ${BUILD_DIR}/lib/libluxrays.so
 	else
-		dolib.a lib/libluxcore.a
-		dolib.a lib/libsmallluxgpu.a
-		dolib.a lib/libluxrays.a
+		dolib.a ${BUILD_DIR}/lib/libluxcore.a
+		dolib.a ${BUILD_DIR}/lib/libsmallluxgpu.a
+		dolib.a ${BUILD_DIR}/lib/libluxrays.a
 	fi
 }
 
