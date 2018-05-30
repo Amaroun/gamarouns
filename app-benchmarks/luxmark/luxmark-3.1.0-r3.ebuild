@@ -31,12 +31,16 @@ RDEPEND=">=dev-libs/boost-1.43:=[python]
 	media-libs/freeglut
 	media-libs/glew
 	app-benchmarks/luxmark-scenes
+	dev-qt/qtcore
+	dev-qt/qtgui
+	dev-qt/qtnetwork
+	dev-qt/qtopengl
 	"
 DEPEND="${RDEPEND}
 	sys-devel/bison
 	sys-devel/flex
 	"
-
+PATCHES+=( "${FILESDIR}/${PN}-qt5.patch" )
 
 src_configure() {
 	use cpu_flags_x86_sse && append-flags "-msse -DLUX_USE_SSE"

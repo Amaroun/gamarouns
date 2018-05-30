@@ -31,6 +31,10 @@ RDEPEND=">=dev-libs/boost-1.43:=[python]
 	media-libs/freeglut
 	media-libs/glew
 	app-benchmarks/luxmark-scenes
+        dev-qt/qtcore:4
+        dev-qt/qtgui:4
+        dev-qt/qtnetwork:4
+        dev-qt/qtopengl:4
 	"
 DEPEND="${RDEPEND}
 	sys-devel/bison
