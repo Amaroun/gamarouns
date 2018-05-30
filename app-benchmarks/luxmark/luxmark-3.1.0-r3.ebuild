@@ -24,7 +24,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
 RDEPEND=">=dev-libs/boost-1.43:=[python]
-	~media-libs/luxrays-3010.3.1m:=[debug?,opencl=]
+	~media-libs/luxrays-3010.3.1m:=[debug=,opencl=]
 	media-libs/openimageio
 	virtual/opengl
 	opencl? ( virtual/opencl )
@@ -41,6 +41,16 @@ DEPEND="${RDEPEND}
 	sys-devel/flex
 	"
 PATCHES+=( "${FILESDIR}/${PN}-qt5.patch" )
+
+src_prepare() {
+	if use debug ; then
+		PATCHES+=( "${FILESDIR}/${PN}-shared-luxrays.patch" )
+	else
+		PATCHES+=( "${FILESDIR}/${PN}-static-luxrays.patch" )
+	fi
+	cmake-utils_src_prepare
+
+}
 
 src_configure() {
 	use cpu_flags_x86_sse && append-flags "-msse -DLUX_USE_SSE"
@@ -71,7 +81,7 @@ src_install() {
 		doicon ${DISTDIR}/luxrender.svg
 	fi
 
-	
+
 	make_desktop_entry "${PN}" "${PN}" "luxrender" "Utility" "Path=/usr/share/${PN}"
 
 }
