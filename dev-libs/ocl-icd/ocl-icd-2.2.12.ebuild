@@ -1,13 +1,13 @@
 # Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=5
+EAPI=6
 
 inherit multilib
 
 DESCRIPTION="Alternative to vendor specific OpenCL ICD loaders"
 HOMEPAGE="http://forge.imag.fr/projects/ocl-icd/"
-SRC_URI="https://forge.imag.fr/frs/download.php/814/${P}.tar.gz"
+SRC_URI="https://forge.imag.fr/frs/download.php/836/${P}.tar.gz"
 LICENSE="BSD-2"
 SLOT="0"
 KEYWORDS="amd64 x86"
@@ -18,10 +18,6 @@ DEPEND="dev-lang/ruby
 	dev-ruby/rubygems"
 RDEPEND="app-eselect/eselect-opencl"
 
-src_unpack(){
-	default
-	mv "${WORKDIR}/${PN}-2.2.11" "${S}"
-}
 src_configure(){
 	extra_econf=()
 	extra_econf+="--enable-official-khronos-headers"
