@@ -15,7 +15,8 @@ if [[ "$PV" == "9999" ]] ; then
 else
 	VER_MAJ_MIN="$(get_version_component_range 1-2)"
 	EHG_REVISION="${PN}_v${VER_MAJ_MIN}"
-	SRC_URI="https://bytebucket.org/luxrender/lux/raw/203f2dad3260679802868560f1dac3c9bfee51a1/luxrender.svg"
+	SRC_URI="https://github.com/LuxCoreRender/LuxMark/archive/${PN}_v${PV}.tar.gz
+	https://raw.githubusercontent.com/pemryan/LuxRender/master/luxrender.svg"
 fi
 
 LICENSE="GPL-3"
@@ -23,8 +24,11 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
+#		media-libs/luxrender:=[debug=,opencl=] )
+
 RDEPEND=">=dev-libs/boost-1.43:=[python]
-	~media-libs/luxrays-3010.3.1m:=[debug=,opencl=]
+	|| ( media-libs/luxcorerender:=[debug=,opencl=]
+	  media-libs/luxrays:=[debug=,opencl=] )
 	media-libs/openimageio
 	virtual/opengl
 	opencl? ( virtual/opencl )
@@ -40,7 +44,10 @@ DEPEND="${RDEPEND}
 	sys-devel/bison
 	sys-devel/flex
 	"
-PATCHES+=( "${FILESDIR}/${PN}-qt5.patch" )
+PATCHES+=( "${FILESDIR}/${PN}-qt5.patch"
+	"${FILESDIR}/${PN}_remove_slg_renderengine_h.patch"
+	"${FILESDIR}/${PN}-luxcorerender_slg.patch"
+	)
 
 src_prepare() {
 	if use debug ; then

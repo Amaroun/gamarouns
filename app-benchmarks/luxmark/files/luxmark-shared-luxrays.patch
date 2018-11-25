@@ -1,12 +1,8 @@
-diff -NurB /tmp/a/cmake/Dependencies.cmake /tmp/b/cmake/Dependencies.cmake
---- /tmp/a/cmake/Dependencies.cmake	2018-05-29 15:20:13.560028861 +0200
-+++ /tmp/b/cmake/Dependencies.cmake	2018-05-30 12:01:31.222033730 +0200
-@@ -134,10 +134,10 @@
- 
- IF(APPLE)
- 	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
--	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
-+	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.so ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
+diff -NurB b/cmake/Dependencies.cmake c/cmake/Dependencies.cmake
+--- b/cmake/Dependencies.cmake	2018-07-23 19:01:36.651869689 +0200
++++ c/cmake/Dependencies.cmake	2018-07-23 20:28:35.641540291 +0200
+@@ -137,7 +137,7 @@
+ 	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
  ELSE(APPLE)
  	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include ${LuxRays_HOME}/include )
 -	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
@@ -14,15 +10,8 @@ diff -NurB /tmp/a/cmake/Dependencies.cmake /tmp/b/cmake/Dependencies.cmake
  ENDIF(APPLE)
  
  IF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
-@@ -157,14 +157,14 @@
- 
- IF(APPLE)
- 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
--	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
-+	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu.so ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
- 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
--	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
-+	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.so ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
+@@ -162,12 +162,12 @@
+ 	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
  ELSE(APPLE)
  	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ../luxrays/include)
 -	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
@@ -30,6 +19,10 @@ diff -NurB /tmp/a/cmake/Dependencies.cmake /tmp/b/cmake/Dependencies.cmake
  	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
 -	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
 +	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+ 
+ 	IF (NOT SLG_LIBRARY)
+-		FIND_LIBRARY(SLG_LIBRARY slg-core PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++		FIND_LIBRARY(SLG_LIBRARY libslg-core.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+ 	ENDIF (NOT SLG_LIBRARY)
  ENDIF(APPLE)
  
- IF (SLG_INCLUDE_DIRS AND SLG_LIBRARY)
