@@ -9,7 +9,7 @@ HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
 
 SRC_URI="http://freefr.dl.sourceforge.net/project/anttweakbar/AntTweakBar_116.zip -> ${P}.zip"
 
-KEYWORDS="~x86 ~amd64"
+KEYWORDS="~x86 ~amd64 ~arm ~arm64"
 LICENSE="ZLIB"
 SLOT="0"
 IUSE=""
