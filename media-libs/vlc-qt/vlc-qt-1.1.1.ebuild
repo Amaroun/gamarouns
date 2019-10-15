@@ -20,7 +20,7 @@ if [[ "${PV}" == "9999" ]]; then
 	EGIT_REPO_URI="https://github.com/vlc-qt/vlc-qt.git"
 	KEYWORDS=""
 else
-	KEYWORDS="~amd64 ~x86"
+	KEYWORDS="~amd64 ~x86 ~arm  ~arm64"
 	SRC_URI="https://github.com/vlc-qt/vlc-qt/archive/${PV}.tar.gz -> ${P}.tar.gz"
 fi
 
