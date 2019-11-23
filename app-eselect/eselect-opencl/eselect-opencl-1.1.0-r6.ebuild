@@ -57,11 +57,12 @@ src_install() {
 	# We install all versions of OpenCL headers
 	for CL_ABI in "${CL_ABIS[@]}" ; do
 		mkdir -p "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-${CL_ABI}"
-		for f in ${headers[@]}; do
-			if [ -r "${WORKDIR}/OpenCL-Headers-opencl${CL_ABI/./}/${f}" ] ; then
-				cp "${WORKDIR}"/OpenCL-Headers-opencl${CL_ABI/./}/${f} "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-${CL_ABI}/${f}"
-			fi
-		done
+		cp "${WORKDIR}"/OpenCL-Headers-opencl${CL_ABI/./}/* "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-${CL_ABI}"
+#		for f in ${headers[@]}; do
+#			if [ -r "${WORKDIR}/OpenCL-Headers-opencl${CL_ABI/./}/${f}" ] ; then
+#				cp "${WORKDIR}"/OpenCL-Headers-opencl${CL_ABI/./}/${f} "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-${CL_ABI}/${f}"
+#			fi
+#		done
 
 		if [ -r "${WORKDIR}/${CL_ABI}/cl.hpp" ] ; then
 			cp "${WORKDIR}/${CL_ABI}/cl.hpp" "${D}/usr/$(get_libdir)/OpenCL/global/include/CL-${CL_ABI}/"
