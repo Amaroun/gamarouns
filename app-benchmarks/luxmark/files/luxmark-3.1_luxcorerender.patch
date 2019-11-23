@@ -91,48 +91,6 @@ diff -NurB a/cmake/exportmaps/linux_symbol_exports.map b/cmake/exportmaps/linux_
 +	*jinit*;
 +};
 +
-diff -NurB a/cmake/Packages/FindEmbree.cmake b/cmake/Packages/FindEmbree.cmake
---- a/cmake/Packages/FindEmbree.cmake	2015-09-01 12:07:29.000000000 +0200
-+++ b/cmake/Packages/FindEmbree.cmake	2017-12-07 15:32:43.000000000 +0100
-@@ -15,22 +15,25 @@
- ## ======================================================================== ##
- 
- FIND_PATH(EMBREE_INCLUDE_PATH embree2/rtcore.h
--  /usr/include
--  /usr/local/include
--  /opt/local/include
--  ${EMBREE_ROOT}/include)
-+	/usr/include
-+	/usr/local/include
-+	/opt/local/include
-+	${EMBREE_ROOT}/include)
- 
- FIND_LIBRARY(EMBREE_LIBRARY NAMES embree libembree.so.2 PATHS 
--  /usr/lib 
--  /usr/local/lib 
--  /opt/local/lib
--  ${EMBREE_ROOT}/lib/x64)
-+	/usr/lib 
-+	/usr/local/lib 
-+	/opt/local/lib
-+	${EMBREE_ROOT}/lib/x64
-+	${EMBREE_ROOT}/lib
-+	${EMBREE_ROOT}/build)
-+
- 
- IF (EMBREE_INCLUDE_PATH AND EMBREE_LIBRARY)
--  SET(EMBREE_FOUND TRUE)
-+	SET(EMBREE_FOUND TRUE)
- ENDIF()
- 
- MARK_AS_ADVANCED(
--  EMBREE_INCLUDE_PATH
--  EMBREE_LIBRARY
--)
-\ No newline at end of file
-+	EMBREE_INCLUDE_PATH
-+	EMBREE_LIBRARY
-+)
 diff -NurB a/cmake/PlatformSpecific.cmake b/cmake/PlatformSpecific.cmake
 --- a/cmake/PlatformSpecific.cmake	2015-09-01 12:07:29.000000000 +0200
 +++ b/cmake/PlatformSpecific.cmake	2017-12-07 15:32:43.000000000 +0100

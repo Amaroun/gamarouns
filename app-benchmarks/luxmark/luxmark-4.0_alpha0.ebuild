@@ -14,11 +14,10 @@ if [[ "$PV" == "9999" ]] ; then
 	SRC_URI="https://bytebucket.org/luxrender/lux/raw/tip/luxrender.svg"
 	EHG_REPO_URI="https://bitbucket.org/luxrender/luxmark"
 else
-	VER_MAJ_MIN="$(get_version_component_range 1-2)"
-	EHG_REVISION="${PN}_v${VER_MAJ_MIN}"
-	SRC_URI="https://github.com/LuxCoreRender/LuxMark/archive/${PN}_v${PV}.tar.gz
+	DV=${PV//_alpha/alpha}
+	SRC_URI="https://github.com/LuxCoreRender/LuxMark/archive/${PN}_v${DV}.tar.gz
 	https://raw.githubusercontent.com/pemryan/LuxRender/master/luxrender.svg"
-	S="${WORKDIR}/LuxMark-${PN}_v${PV}"
+	S="${WORKDIR}/LuxMark-${PN}_v${DV}"
 fi
 
 LICENSE="GPL-3"
@@ -30,12 +29,13 @@ IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 RDEPEND=">=dev-libs/boost-1.43:=[python]
 	media-libs/luxcorerender:=[debug=,opencl=]
 	media-libs/openimageio
+	media-libs/oidn
 	virtual/opengl
 	opencl? ( virtual/opencl )
 	media-libs/freeglut
 	media-libs/glew
 	media-libs/embree
-	app-benchmarks/luxmark-scenes
+	app-benchmarks/luxmark-scenes:4
 	dev-qt/qtcore
 	dev-qt/qtgui
 	dev-qt/qtnetwork
@@ -45,11 +45,11 @@ DEPEND="${RDEPEND}
 	sys-devel/bison
 	sys-devel/flex
 	"
+
 PATCHES+=(
-	"${FILESDIR}/${PN}-qt5.patch"
-	"${FILESDIR}/${PN}_openvdb_dependancy.patch"
-	"${FILESDIR}/${P}_luxcorerender.patch"
-	"${FILESDIR}/${PN}_embree3.patch"
+	"${FILESDIR}/${PN}-4.0_cmake_python.patch"
+	"${FILESDIR}/${PN}_system_deps.patch"
+	"${FILESDIR}/${PN}_autogen.patch"
 	)
 
 src_prepare() {
@@ -59,6 +59,7 @@ src_prepare() {
 #		PATCHES+=( "${FILESDIR}/${P}_luxcorerender_static.patch" )
 #	fi
 	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
+	cp "${FILESDIR}/FindBCD.cmake" "${S}/cmake"
 	cmake-utils_src_prepare
 
 }
@@ -74,13 +75,13 @@ src_configure() {
 		CMAKE_BUILD_TYPE="Release"
         fi
 
-	local mycmakeargs=""
+	local mycmakeargs="-DCMAKE_AUTOMOC=OFF"
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
-	! use opencl && mycmakeargs=("${mycmakeargs}
+	! use opencl && mycmakeargs+=("${mycmakeargs}
 		  -DLUXRAYS_DISABLE_OPENCL=ON")
-
+	mycmakeargs+=("-DPYTHON_V=36")
 	cmake-utils_src_configure
 }
 
