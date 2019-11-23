@@ -1,10 +1,40 @@
-diff -NurB a/src/slg/CMakeLists.txt b/src/slg/CMakeLists.txt
---- a/src/slg/CMakeLists.txt	2018-05-06 11:04:25.000000000 +0200
-+++ b/src/slg/CMakeLists.txt	2018-11-25 20:27:39.093353442 +0100
-@@ -80,42 +80,6 @@
+diff -NurB b/src/slg/CMakeLists.txt c/src/slg/CMakeLists.txt
+--- b/src/slg/CMakeLists.txt	2018-11-13 09:44:09.000000000 +0100
++++ c/src/slg/CMakeLists.txt	2018-12-10 09:30:47.267511518 +0100
+@@ -78,69 +78,6 @@
  
- ###########################################################################
- #
+ add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
+ 
+-###########################################################################
+-#
+-# BCD files
+-#
+-###########################################################################
+-
+-set(BCD_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/Chronometer.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/CovarianceMatrix.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/Denoiser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/DenoisingUnit.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/MultiscaleDenoiser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/SamplesAccumulator.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/SpikeRemovalFilter.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/Utils.cpp
+-)
+-
+-SOURCE_GROUP("Source Files\\BCD Library" FILES ${BCD_SRCS})
+-
+-include_directories(${LuxRays_SOURCE_DIR}/deps/eigen-3.3.4)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include/bcd/core)
+-
+-# Use only MPL licensed source code
+-add_definitions("-DEIGEN_MPL2_ONLY")
+-
+-add_library(bcd STATIC ${BCD_SRCS})
+-
+-###########################################################################
+-#
 -# OpenVDB files
 -#
 -###########################################################################
@@ -30,7 +60,7 @@ diff -NurB a/src/slg/CMakeLists.txt b/src/slg/CMakeLists.txt
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-3.1.0/openvdb/util/Util.cc
 -)
 -
--SOURCE_GROUP("Source Files\\OpenVDB Library" FILES ${OPENVDB_SRCS})	
+-SOURCE_GROUP("Source Files\\OpenVDB Library" FILES ${OPENVDB_SRCS})
 -
 -include_directories(${LuxRays_SOURCE_DIR}/deps/openvdb-3.1.0)
 -
@@ -38,9 +68,6 @@ diff -NurB a/src/slg/CMakeLists.txt b/src/slg/CMakeLists.txt
 -add_definitions("-DOPENVDB_3_ABI_COMPATIBLE -DOPENVDB_STATICLIB -DOPENVDB_OPENEXR_STATICLIB")
 -
 -add_library(openvdb STATIC ${OPENVDB_SRCS})
--
--###########################################################################
--#
- # Kernel files
- #
+ 
  ###########################################################################
+ #

@@ -1,0 +1,83 @@
+diff -NurB a/cmake/Dependencies.cmake c/cmake/Dependencies.cmake
+--- a/cmake/Dependencies.cmake	2019-05-01 12:58:24.000000000 +0200
++++ c/cmake/Dependencies.cmake	2019-05-29 01:06:46.287247295 +0200
+@@ -138,6 +138,16 @@
+ 	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
+ endif ()
+ 
++# BCD
++set(BCD_ROOT                   "${BCD_SEARCH_PATH}")
++
++find_package(BCD REQUIRED)
++
++if (BCD_FOUND)
++       include_directories(BEFORE SYSTEM ${BCD_INCLUDE_PATH})
++endif ()
++
++
+ # OpenMP
+ if(NOT APPLE)
+ 	find_package(OpenMP)
+diff -NurB a/CMakeLists.txt c/CMakeLists.txt
+--- a/CMakeLists.txt	2019-05-01 12:58:24.000000000 +0200
++++ c/CMakeLists.txt	2019-05-29 01:06:40.452247170 +0200
+@@ -131,6 +131,12 @@
+ 	MESSAGE(FATAL_ERROR "--> Could not locate required C-BLOSC files - Please check ${BLOSC_SEARCH_PATH}")
+ endif()
+ 
++ 
++if (NOT BCD_FOUND)
++       MESSAGE(FATAL_ERROR "--> Could not locate required BCD files - Please check ${BCD_SEARCH_PATH}")
++endif()
++
++
+ ################################################################################
+ #
+ # Build options
+@@ -145,7 +151,7 @@
+ 	set(LUXCORE_LIBRARY luxcore)
+ 	ADD_DEFINITIONS("-DLUXCORE_DLL")
+ else()
+-	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays bcd openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+ endif()
+ 
+ ################################################################################
+diff -NurB a/src/luxcore/CMakeLists.txt c/src/luxcore/CMakeLists.txt
+--- a/src/luxcore/CMakeLists.txt	2019-05-01 12:58:24.000000000 +0200
++++ c/src/luxcore/CMakeLists.txt	2019-05-29 02:03:32.187320255 +0200
+@@ -150,7 +150,7 @@
+ 
+ if (BUILD_LUXCORE_DLL)
+ 	add_library(luxcore SHARED ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
+-	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+ else()
+ 	add_library(luxcore STATIC ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
+ endif()
+@@ -174,10 +174,10 @@
+ add_library(pyluxcore MODULE ${PYLUXCORE_SRCS} ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
+ add_definitions(${VISIBILITY_FLAGS})
+ if(APPLE)
+-	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays bcd openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${INTEL_OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${INTEL_OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+     SET_TARGET_PROPERTIES(pyluxcore PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible
+ else()
+-	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+ endif()
+ 
+ set_target_properties(pyluxcore PROPERTIES PREFIX "")
+diff -NurB a/tests/luxcoreimplserializationdemo/CMakeLists.txt c/tests/luxcoreimplserializationdemo/CMakeLists.txt
+--- a/tests/luxcoreimplserializationdemo/CMakeLists.txt	2019-05-01 12:58:24.000000000 +0200
++++ c/tests/luxcoreimplserializationdemo/CMakeLists.txt	2019-05-29 01:18:05.918261854 +0200
+@@ -26,8 +26,6 @@
+ 	luxcoreimplserializationdemo.cpp
+ 	)
+ 
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
+-
+ add_executable(luxcoreimplserializationdemo ${LUXCOREIMPL_SERIALIZATIONDEMO_SRCS})
+ 
+-TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays bcd openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} openvdb ${BLOSC_LIBRARIES} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})

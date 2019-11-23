@@ -1,0 +1,54 @@
+diff -NurB f/CMakeLists.txt g/CMakeLists.txt
+--- f/CMakeLists.txt	2019-01-01 18:13:12.787904069 +0100
++++ g/CMakeLists.txt	2019-01-11 17:39:57.667042157 +0100
+@@ -177,22 +177,25 @@
+ #
+ ################################################################################
+ 
+-if(NOT APPLE OR OSX_BUILD_DEMOS)
+-	add_subdirectory(samples/luxcoredemo)
+-	add_subdirectory(samples/luxcorescenedemo)
+-
+-	if (NOT WIN32 OR NOT BUILD_LUXCORE_DLL)
+-		# Internal tests can not be compiled on WIN32 with DLL enabled
+-		add_subdirectory(tests/benchsimple)
+-		add_subdirectory(tests/luxcoreimplserializationdemo)
++if(BUILD_DEMOS)
++	if(NOT APPLE OR OSX_BUILD_DEMOS)
++		add_subdirectory(samples/luxcoredemo)
++		add_subdirectory(samples/luxcorescenedemo)
++
++		if (NOT WIN32 OR NOT BUILD_LUXCORE_DLL)
++			# Internal tests can not be compiled on WIN32 with DLL enabled
++			add_subdirectory(tests/benchsimple)
++			add_subdirectory(tests/luxcoreimplserializationdemo)
++		endif()
+ 	endif()
+-endif()
+ 
+-add_subdirectory(samples/luxcoreconsole)
++	add_subdirectory(samples/luxcoreconsole)
++
++	if(OPENGL_FOUND)
++		add_subdirectory(samples/luxcoreui)
++	endif(OPENGL_FOUND)
++endif()
+ 
+-if(OPENGL_FOUND)
+-	add_subdirectory(samples/luxcoreui)
+-endif(OPENGL_FOUND)
+ 
+ 
+ ################################################################################
+diff -NurB f/src/luxrays/CMakeLists.txt g/src/luxrays/CMakeLists.txt
+--- f/src/luxrays/CMakeLists.txt	2019-01-01 17:46:38.708945000 +0100
++++ g/src/luxrays/CMakeLists.txt	2019-01-11 16:00:21.847198073 +0100
+@@ -247,7 +247,7 @@
+ 	${LUXRAYS_SRCS_KERNELS}
+ )
+ 
+-add_library(luxrays STATIC ${LUXRAYS_LIB_SRCS})
++add_library(luxrays SHARED ${LUXRAYS_LIB_SRCS})
+ add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
+ 
+ TARGET_LINK_LIBRARIES(luxrays ${OPENIMAGEIO_LIBRARIES})
