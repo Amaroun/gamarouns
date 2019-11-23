@@ -6,7 +6,7 @@ EAPI="6"
 
 inherit cmake-utils
 
-DESCRIPTION="A blocking, shuffling and loss-less compression library that can be faster than `memcpy()`. "
+DESCRIPTION="A blocking, shuffling and loss-less compression library that can be faster than 'memcpy()'. "
 HOMEPAGE="http://blosc.org"
 
 
