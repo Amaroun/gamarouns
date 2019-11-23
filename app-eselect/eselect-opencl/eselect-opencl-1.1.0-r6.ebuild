@@ -23,7 +23,6 @@ HOMEPAGE="https://www.gentoo.org/"
 CL_ABIS=(1.0 1.1 1.2 2.0 2.1)
 
 SRC_URI="
-	https://dev.gentoo.org/~xarthisius/distfiles/${P}-r1.tar.xz
 	http://packages.gentooexperimental.org/opencl-cpp-headers.tar
 	"
 
@@ -40,6 +39,8 @@ IUSE=""
 DEPEND="app-arch/xz-utils"
 RDEPEND=">=app-admin/eselect-1.2.4"
 
+S="${WORKDIR}"
+
 pkg_postinst() {
 	local impl="$(eselect opencl show)"
 	if [[ -n "${impl}"  && "${impl}" != '(none)' ]] ; then
@@ -49,10 +50,7 @@ pkg_postinst() {
 
 src_install() {
 	insinto /usr/share/eselect/modules
-	doins opencl.eselect
-	#doman opencl.eselect.5
-
-	local headers=( opencl.h cl_platform.h cl.h cl_ext.h cl_gl.h cl_gl_ext.h cl_egl.h )
+	doins ${FILESDIR}/opencl.eselect
 
 	# We install all versions of OpenCL headers
 	for CL_ABI in "${CL_ABIS[@]}" ; do
