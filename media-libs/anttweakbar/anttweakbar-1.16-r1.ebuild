@@ -2,14 +2,14 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header:  $
 
-EAPI="4"
+EAPI="7"
 
 DESCRIPTION="A library that adds an easy GUI into OpenGL applications to interactively tweak them on-screen"
 HOMEPAGE="http://www.antisphere.com/Wiki/tools:anttweakbar?sb=tools"
 
 SRC_URI="http://freefr.dl.sourceforge.net/project/anttweakbar/AntTweakBar_116.zip -> ${P}.zip"
 
-KEYWORDS="~x86 ~amd64"
+KEYWORDS="~x86 ~amd64 ~arm ~arm64"
 LICENSE="ZLIB"
 SLOT="0"
 IUSE=""
@@ -19,8 +19,12 @@ RDEPEND="$DEPEND"
 
 S="${WORKDIR}/AntTweakBar"
 
-src_unpack() {
-	unpack ${A}
+
+src_prepare() {
+	default
+	mkdir "$(get_libdir)"
+	sed src/Makefile -i -e  "s/\.\.\/lib/\.\.\/$(get_libdir)/g"
+	sed src/Makefile.osx -i -e "s/\.\.\/lib/\.\.\/$(get_libdir)/g"
 }
 
 src_compile() {
@@ -29,8 +33,8 @@ src_compile() {
 }
 
 src_install() {
-	dolib lib/libAntTweakBar.so
-	dolib lib/libAntTweakBar.so.1
+	dolib.so $(get_libdir)/libAntTweakBar.so
+	dolib.so $(get_libdir)/libAntTweakBar.so.1
 	insinto /usr/include
 	doins include/AntTweakBar.h
 }
