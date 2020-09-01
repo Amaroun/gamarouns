@@ -11,7 +11,7 @@ HOMEPAGE="http://www.luxmark.info"
 
 DOWNLOAD_VERSION="${PV//_/}"
 
-SRC_URI="https://github.com/LuxCoreRender/LuxMark/releases/download/luxmark_v${DOWNLOAD_VERSION}/scenes.zip"
+SRC_URI="https://github.com/LuxCoreRender/LuxMark/releases/download/luxmark_v${DOWNLOAD_VERSION}/scenes.tgz"
 
 LICENSE="GPL-3"
 SLOT="4"

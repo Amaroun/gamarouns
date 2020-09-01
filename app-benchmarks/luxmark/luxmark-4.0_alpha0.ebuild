@@ -11,12 +11,12 @@ HOMEPAGE="http://www.luxmark.info"
 
 if [[ "$PV" == "9999" ]] ; then
 	inherit mercurial
-	SRC_URI="https://bytebucket.org/luxrender/lux/raw/tip/luxrender.svg"
+	SRC_URI="https://raw.githubusercontent.com/FreeCAD/FreeCAD-render/master/icons/Luxcore.svg"
 	EHG_REPO_URI="https://bitbucket.org/luxrender/luxmark"
 else
 	DV=${PV//_alpha/alpha}
 	SRC_URI="https://github.com/LuxCoreRender/LuxMark/archive/${PN}_v${DV}.tar.gz
-	https://raw.githubusercontent.com/pemryan/LuxRender/master/luxrender.svg"
+	https://raw.githubusercontent.com/FreeCAD/FreeCAD-render/master/icons/Luxcore.svg"
 	S="${WORKDIR}/LuxMark-${PN}_v${DV}"
 fi
 
@@ -90,10 +90,10 @@ src_install() {
 	dobin "${CMAKE_BUILD_DIR}"/bin/luxmark
 	dodoc AUTHORS.txt || die
 	if ! use no_icon ; then
-		doicon ${DISTDIR}/luxrender.svg
+		doicon ${DISTDIR}/Luxcore.svg
 	fi
 
 
-	make_desktop_entry "${PN}" "${PN}" "luxrender" "Utility" "Path=/usr/share/${PN}"
+	make_desktop_entry "${PN}" "${PN}" "Luxcore" "Utility" "Path=/usr/share/${PN}"
 
 }

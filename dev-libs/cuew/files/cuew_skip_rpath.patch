@@ -1,0 +1,12 @@
+diff -NurB a/CMakeLists.txt cuew-9999/CMakeLists.txt
+--- a/CMakeLists.txt	2020-08-27 16:14:16.149434351 +0200
++++ cuew-9999/CMakeLists.txt	2020-08-27 16:15:20.575431746 +0200
+@@ -5,6 +5,8 @@
+     cmake_policy (SET CMP0017 NEW)
+ endif()
+ 
++SET(CMAKE_SKIP_RPATH YES CACHE BOOL "Remove RUNPATH from ELF dynamic sections" FORCE) 
++
+ include(CMakeParseArguments)
+ 
+ set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)

@@ -1,0 +1,347 @@
+diff -NurB a/cmake/Dependencies.cmake LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake
+--- a/cmake/Dependencies.cmake	2020-08-31 13:11:18.649777535 +0200
++++ LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake	2020-08-31 13:11:34.800776882 +0200
+@@ -130,6 +127,48 @@
+ 	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
+ endif ()
+ 
++# OpenVDB
++set(OpenVDB_ROOT                   "${OpenVDB_SEARCH_PATH}")
++find_package(OpenVDB REQUIRED)
++
++if (OpenVDB_FOUND)
++	include_directories(BEFORE SYSTEM ${OpenVDB_INCLUDE_PATH})
++endif ()
++
++# cuew
++set(cuew_ROOT                   "${cuew_SEARCH_PATH}")
++find_package(cuew REQUIRED)
++
++if (cuew_FOUND)
++	include_directories(BEFORE SYSTEM ${cuew_INCLUDE_PATH})
++endif ()
++
++# OpenSubdiv
++set(OpenSubdiv_ROOT                   "${OpenSubdiv_SEARCH_PATH}")
++find_package(OpenSubdiv REQUIRED)
++
++if (OpenSubdiv_FOUND)
++	include_directories(BEFORE SYSTEM ${OpenSubdiv_INCLUDE_PATH})
++endif ()
++
++# clew
++set(clew_ROOT                   "${clew_SEARCH_PATH}")
++find_package(clew REQUIRED)
++
++if (clew_FOUND)
++	include_directories(BEFORE SYSTEM ${clew_INCLUDE_PATH})
++endif ()
++
++# BCD
++set(BCD_ROOT                   "${BCD_SEARCH_PATH}")
++
++find_package(BCD)
++
++if (BCD_FOUND)
++       include_directories(BEFORE SYSTEM ${BCD_INCLUDE_PATH})
++endif ()
++
++
+ # OpenMP
+ if(NOT APPLE)
+ 	find_package(OpenMP)
+diff -NurB a/CMakeLists.txt LuxCore-luxcorerender_v2.4/CMakeLists.txt
+--- a/CMakeLists.txt	2020-08-31 13:11:18.649777535 +0200
++++ LuxCore-luxcorerender_v2.4/CMakeLists.txt	2020-09-01 00:12:39.264806993 +0200
+@@ -42,6 +42,9 @@
+ enable_language(C)
+ enable_language(CXX)
+ 
++set(CMAKE_CXX_STANDARD 14)
++set(CMAKE_CXX_STANDARD_REQUIRED ON)
++
+ if (CMAKE_CONFIGURATION_TYPES)
+ 
+ 	message(STATUS "Multi-config generator detected")
+@@ -56,7 +59,7 @@
+ 	# For generators like make, cmake needs to know which variant to use
+ 	# so let's have a drop-down selector for it in the GUI:
+ 
+-	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build configuration")
++#_cmake_modify_IGNORE 	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build configuration")
+ 	set_property(
+ 			CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${supported_build_variants})
+ 
+@@ -92,9 +95,6 @@
+ SET(LuxRays_INCLUDE_DIR "${LuxRays_SOURCE_DIR}/include")
+ include_directories("${LuxRays_INCLUDE_DIR}")
+ 
+-include_directories("${LuxRays_SOURCE_DIR}/deps/json-3.7.3/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/cuew/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/clew/include")
+ 
+ # Find dependencies
+ include(Dependencies)
+@@ -127,6 +127,16 @@
+ 	MESSAGE(FATAL_ERROR "--> Could not locate required C-BLOSC files - Please check ${BLOSC_SEARCH_PATH}")
+ endif()
+ 
++if (NOT CUEW_FOUND)
++	MESSAGE(FATAL_ERROR "--> Could not locate required CUEW files - Please check ${CUEW_SEARCH_PATH}")
++endif()
++if (NOT BCD_FOUND)
++	MESSAGE(FATAL_ERROR "--> Could not locate required BCD files - Please check ${BCD_SEARCH_PATH}")
++endif()
++if (NOT OPENSUBDIV_FOUND)
++	MESSAGE(FATAL_ERROR "--> Could not locate required OPENSUBDIV files - Please check ${OPENSUBDIV_SEARCH_PATH}")
++endif()
++
+ ################################################################################
+ #
+ # Build options
+@@ -154,7 +164,7 @@
+ 	set(LUXCORE_LIBRARY luxcore)
+ 	ADD_DEFINITIONS("-DLUXCORE_DLL")
+ else()
+-	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays  ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
+ endif()
+ 
+ ################################################################################
+diff -NurB a/samples/luxcoreconsole/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoreconsole/CMakeLists.txt
+--- a/samples/luxcoreconsole/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
++++ LuxCore-luxcorerender_v2.4/samples/luxcoreconsole/CMakeLists.txt	2020-08-31 23:56:38.304845858 +0200
+@@ -28,4 +28,4 @@
+ 
+ add_executable(luxcoreconsole ${LUXCORECONSOLE_SRCS})
+ 
+-TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
+\ No newline at end of file
++TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${clew_LIBRARIES} ${Python_LIBRARIES})
+diff -NurB a/samples/luxcoredemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoredemo/CMakeLists.txt
+--- a/samples/luxcoredemo/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
++++ LuxCore-luxcorerender_v2.4/samples/luxcoredemo/CMakeLists.txt	2020-08-31 20:09:22.292676077 +0200
+@@ -29,4 +29,4 @@
+ add_executable(luxcoredemo ${LUXCORELIBDEMO_SRCS})
+ add_definitions(${VISIBILITY_FLAGS})
+ 
+-TARGET_LINK_LIBRARIES(luxcoredemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${OPENCL_LIBRARIES} ${CUDA_ALL_LIBRARIES})
++TARGET_LINK_LIBRARIES(luxcoredemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${OPENCL_LIBRARIES} ${CUDA_ALL_LIBRARIES} ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${clew_LIBRARY} ${Python_LIBRARIES})
+diff -NurB a/samples/luxcorescenedemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcorescenedemo/CMakeLists.txt
+--- a/samples/luxcorescenedemo/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
++++ LuxCore-luxcorerender_v2.4/samples/luxcorescenedemo/CMakeLists.txt	2020-08-31 20:13:29.401666083 +0200
+@@ -29,4 +29,4 @@
+ add_executable(luxcorescenedemo ${LUXCORESCENEDEMO_SRCS})
+ add_definitions(${VISIBILITY_FLAGS})
+ 
+-TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
++TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${clew_LIBRARY})
+diff -NurB a/samples/luxcoreui/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoreui/CMakeLists.txt
+--- a/samples/luxcoreui/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
++++ LuxCore-luxcorerender_v2.4/samples/luxcoreui/CMakeLists.txt	2020-09-01 00:00:36.439836227 +0200
+@@ -89,4 +89,6 @@
+ 	${LUXCORE_LIBRARY}
+ 	${OPENGL_LIBRARIES}
+ 	${GTK3_LIBRARIES}
+-	${Boost_LIBRARIES})
++	${Python_LIBRARIES}
++	${Boost_LIBRARIES}
++	${clew_LIBRARIES})
+diff -NurB a/src/luxcore/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxcore/CMakeLists.txt
+--- a/src/luxcore/CMakeLists.txt	2020-08-31 13:11:18.676777534 +0200
++++ LuxCore-luxcorerender_v2.4/src/luxcore/CMakeLists.txt	2020-08-31 23:44:03.454876387 +0200
+@@ -150,13 +150,11 @@
+ 
+ if (BUILD_LUXCORE_DLL)
+ 	add_library(luxcore SHARED ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
+-	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
+ else()
+ 	add_library(luxcore STATIC ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
+ endif()
+ 
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
+-
+ add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
+ link_directories (${SLG_LIB_DIR} ${LuxRays_LIB_DIR})
+ 
+@@ -173,14 +171,13 @@
+ 
+ add_library(pyluxcore MODULE ${PYLUXCORE_SRCS} ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
+ 
+-include_directories(${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0)
+ 
+ add_definitions(-DOPENVDB_STATICLIB ${VISIBILITY_FLAGS})
+ if(APPLE)
+ 	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+     SET_TARGET_PROPERTIES(pyluxcore PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible
+ else()
+-	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+ endif()
+ 
+ set_target_properties(pyluxcore PROPERTIES PREFIX "")
+diff -NurB a/src/luxrays/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxrays/CMakeLists.txt
+--- a/src/luxrays/CMakeLists.txt	2020-08-31 13:11:18.677777534 +0200
++++ LuxCore-luxcorerender_v2.4/src/luxrays/CMakeLists.txt	2020-08-31 13:11:34.870776879 +0200
+@@ -203,8 +203,6 @@
+ 	${LuxRays_SOURCE_DIR}/src/luxrays/utils/thread.cpp
+ 	${LuxRays_SOURCE_DIR}/src/luxrays/utils/ply/rply.cpp
+ 	${LuxRays_SOURCE_DIR}/src/luxrays/utils/properties.cpp
+-	${LuxRays_SOURCE_DIR}/deps/cuew/src/cuew.cpp
+-	${LuxRays_SOURCE_DIR}/deps/clew/src/clew.cpp
+ )
+ SOURCE_GROUP("Source Files\\LuxRays Library" FILES ${LUXRAYS_SRCS})
+ 
+diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeLists.txt
+--- a/src/slg/CMakeLists.txt	2020-08-31 13:11:18.678777534 +0200
++++ LuxCore-luxcorerender_v2.4/src/slg/CMakeLists.txt	2020-08-31 13:11:34.869776879 +0200
+@@ -77,138 +77,6 @@
+ link_directories (${LuxRays_LIB_DIR})
+ 
+ add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
+-
+-###########################################################################
+-#
+-# BCD files
+-#
+-###########################################################################
+-
+-set(BCD_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/Chronometer.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/CovarianceMatrix.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/Denoiser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/DenoisingUnit.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/MultiscaleDenoiser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/SamplesAccumulator.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/SpikeRemovalFilter.cpp
+-	${LuxRays_SOURCE_DIR}/deps/bcd-1.1/src/core/Utils.cpp
+-)
+-
+-SOURCE_GROUP("Source Files\\BCD Library" FILES ${BCD_SRCS})
+-
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include/bcd/core)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/eigen-3.3.4)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/lut)
+-
+-# Use only MPL licensed source code
+-add_definitions("-DEIGEN_MPL2_ONLY")
+-
+-add_library(bcd STATIC ${BCD_SRCS})
+-
+-###########################################################################
+-#
+-# OpenVDB files
+-#
+-###########################################################################
+-
+-set(OPENVDB_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/Grid.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/Metadata.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/MetaMap.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/Platform.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/openvdb.cc	
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Archive.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Compression.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/DelayedLoadMetadata.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/File.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/GridDescriptor.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Queue.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Stream.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/TempFile.cc	
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/Maps.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/Proximity.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/QuantizedUnitVec.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/Transform.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/AttributeArray.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/AttributeArrayString.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/AttributeGroup.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/AttributeSet.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/points.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/StreamCompression.cc	
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/util/Formats.cc
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/util/Util.cc
+-)
+-
+-SOURCE_GROUP("Source Files\\OpenVDB Library" FILES ${OPENVDB_SRCS})
+-
+-include_directories(${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0)
+-
+-# Required by OpenVDB to read ABI 3
+-#add_definitions("-D OPENVDB_USE_DEPRECATED_ABI -DOPENVDB_3_ABI_COMPATIBLE -DOPENVDB_STATICLIB -DOPENVDB_OPENEXR_STATICLIB")
+-add_definitions("-DOPENVDB_USE_BLOSC -DOPENVDB_STATICLIB -DOPENVDB_OPENEXR_STATICLIB")
+-add_library(openvdb STATIC ${OPENVDB_SRCS})
+-
+-###########################################################################
+-#
+-# OpenSubdiv files
+-#
+-###########################################################################
+-
+-set(OPENSUBDIV_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/version.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/bilinearPatchBuilder.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/catmarkPatchBuilder.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/error.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/loopPatchBuilder.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/patchBasis.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/patchBuilder.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/patchDescriptor.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/patchMap.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/patchTable.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/patchTableFactory.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/ptexIndices.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/stencilTable.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/stencilTableFactory.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/stencilBuilder.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/topologyDescriptor.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/topologyRefiner.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/far/topologyRefinerFactory.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/osd/cpuEvaluator.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/osd/cpuKernel.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/osd/cpuPatchTable.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/osd/cpuVertexBuffer.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/sdc/crease.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/sdc/typeTraits.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/fvarLevel.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/fvarRefinement.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/level.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/quadRefinement.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/refinement.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/sparseSelector.cpp
+-    ${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/vtr/triRefinement.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/version.cpp
+-)
+-
+-if (OPENMP_FOUND)
+-	set(OPENSUBDIV_SRCS
+-		${OPENSUBDIV_SRCS}
+-		${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/osd/ompEvaluator.cpp
+-		${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0/opensubdiv/osd/ompKernel.cpp
+-	)
+-
+-endif()
+-
+-SOURCE_GROUP("Source Files\\OpenSubdiv Library" FILES ${OPENSUBDIV_SRCS})
+-
+-include_directories(${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0)
+-
+-# Required by VisualStudio to have M_PI defined
+-add_definitions("-D_USE_MATH_DEFINES")
+-
+-add_library(opensubdiv STATIC ${OPENSUBDIV_SRCS})
+-
+ ###########################################################################
+ #
+ # Kernel files
+diff -NurB a/tests/luxcoreimplserializationdemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/tests/luxcoreimplserializationdemo/CMakeLists.txt
+--- a/tests/luxcoreimplserializationdemo/CMakeLists.txt	2020-09-01 00:49:39.377717204 +0200
++++ LuxCore-luxcorerender_v2.4/tests/luxcoreimplserializationdemo/CMakeLists.txt	2020-09-01 00:52:40.928709862 +0200
+@@ -30,4 +30,4 @@
+ 
+ add_executable(luxcoreimplserializationdemo ${LUXCOREIMPL_SERIALIZATIONDEMO_SRCS})
+ 
+-TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+\ No newline at end of file
++TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays ${Python_LIBRARIES} ${clew_LIBRARIES} ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})

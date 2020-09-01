@@ -1,0 +1,21 @@
+diff -NurB a/CMakeLists.txt clew-0.10/CMakeLists.txt
+--- a/CMakeLists.txt	2020-08-31 10:33:21.780500694 +0200
++++ clew-0.10/CMakeLists.txt	2020-08-31 10:33:33.560500217 +0200
+@@ -6,7 +6,7 @@
+ endif()
+ 
+ include(CMakeParseArguments)
+-
++include(GNUInstallDirs)
+ 
+ set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
+ message(STATUS "Project source dir = ${PROJECT_SOURCE_DIR}")
+diff -NurB a/src/CMakeLists.txt clew-0.10/src/CMakeLists.txt
+--- a/src/CMakeLists.txt	2020-08-31 10:33:21.781500693 +0200
++++ clew-0.10/src/CMakeLists.txt	2020-08-31 10:33:51.670499485 +0200
+@@ -10,4 +10,4 @@
+ 
+ target_link_libraries( clewlib dl )
+ 
+-install(TARGETS clewlib DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
++install(TARGETS clewlib DESTINATION ${CMAKE_INSTALL_LIBDIR})

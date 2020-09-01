@@ -1,0 +1,845 @@
+diff -NurB a/include/embree2/rtcore_bvh_builder.h b/include/embree2/rtcore_bvh_builder.h
+--- a/include/embree2/rtcore_bvh_builder.h	1970-01-01 01:00:00.000000000 +0100
++++ b/include/embree2/rtcore_bvh_builder.h	2018-02-04 00:40:25.387425979 +0100
+@@ -0,0 +1,69 @@
++// ======================================================================== //
++// Copyright 2009-2015 Intel Corporation                                    //
++//                                                                          //
++// Licensed under the Apache License, Version 2.0 (the "License");          //
++// you may not use this file except in compliance with the License.         //
++// You may obtain a copy of the License at                                  //
++//                                                                          //
++//     http://www.apache.org/licenses/LICENSE-2.0                           //
++//                                                                          //
++// Unless required by applicable law or agreed to in writing, software      //
++// distributed under the License is distributed on an "AS IS" BASIS,        //
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
++// See the License for the specific language governing permissions and      //
++// limitations under the License.                                           //
++// ======================================================================== //
++
++#ifndef __RTCORE_BVH_BUILDER_H__
++#define __RTCORE_BVH_BUILDER_H__
++
++/*! \brief Defines an opaque memory allocator type */
++typedef struct __RTCAllocator {}* RTCAllocator;
++/*! \brief Defines an opaque memory thread local allocator type */
++typedef struct __RTCThreadLocalAllocator {}* RTCThreadLocalAllocator;
++
++RTCORE_API RTCAllocator rtcNewAllocator();
++RTCORE_API void rtcDeleteAllocator(RTCAllocator allocator);
++RTCORE_API void rtcResetAllocator(RTCAllocator allocator);
++RTCORE_API RTCThreadLocalAllocator rtcNewThreadAllocator(RTCAllocator allocator);
++RTCORE_API void *rtcThreadAlloc(RTCThreadLocalAllocator allocator, const size_t size);
++
++struct RTCBVHBuilderConfig
++{
++	size_t branchingFactor, maxDepth, blockSize, minLeafSize, maxLeafSize;
++	float travCost, intCost;
++};
++
++RTCORE_API void rtcDefaultBVHBuilderConfig(RTCBVHBuilderConfig *config);
++
++/*! Axis aligned bounding box representation plus geomID and primID */
++struct RTCORE_ALIGN(32) RTCPrimRef
++{
++	float lower_x, lower_y, lower_z;
++	int geomID;
++	float upper_x, upper_y, upper_z;
++	int primID;
++};
++
++typedef void *(*rtcBVHBuilderCreateLocalThreadDataFunc)(void *userGlobalData);
++typedef void *(*rtcBVHBuilderCreateNodeFunc)(void *userLocalThreadData);
++typedef void *(*rtcBVHBuilderCreateLeafFunc)(void *userLocalThreadData, int geomID, int primID, const float lower[3], const float upper[3]);
++typedef void *(*rtcBVHBuilderGetNodeChildrenPtrFunc)(void *node, const size_t i);
++typedef void (*rtcBVHBuilderGetNodeChildrenBBoxFunc)(void *node, const size_t i,
++		const float lower[3], const float upper[3]);
++
++RTCORE_API void *rtcBVHBuilderBinnedSAH(const RTCBVHBuilderConfig *config, const RTCPrimRef *prims, const size_t primRefsSize, void *userData,
++		rtcBVHBuilderCreateLocalThreadDataFunc createLocalThreadDataFunc,
++		rtcBVHBuilderCreateNodeFunc createNodeFunc,
++		rtcBVHBuilderCreateLeafFunc createLeafFunc,
++		rtcBVHBuilderGetNodeChildrenPtrFunc getNodeChildrenPtrFunc,
++		rtcBVHBuilderGetNodeChildrenBBoxFunc getNodeChildrenBBoxFunc);
++
++RTCORE_API void *rtcBVHBuilderMorton(const RTCBVHBuilderConfig *config, const RTCPrimRef *prims, const size_t primRefsSize, void *userData,
++		rtcBVHBuilderCreateLocalThreadDataFunc createLocalThreadDataFunc,
++		rtcBVHBuilderCreateNodeFunc createNodeFunc,
++		rtcBVHBuilderCreateLeafFunc createLeafFunc,
++		rtcBVHBuilderGetNodeChildrenPtrFunc getNodeChildrenPtrFunc,
++		rtcBVHBuilderGetNodeChildrenBBoxFunc getNodeChildrenBBoxFunc);
++
++#endif
+diff -NurB a/kernels/CMakeLists.txt b/kernels/CMakeLists.txt
+--- a/kernels/CMakeLists.txt	2017-06-28 15:11:17.000000000 +0200
++++ b/kernels/CMakeLists.txt	2018-02-04 00:48:22.377444052 +0100
+@@ -34,6 +34,7 @@
+   common/state.cpp
+   common/rtcore.cpp
+   common/rtcore_builder.cpp
++  common/rtcore_bvh_builder.cpp
+   common/scene.cpp
+   common/alloc.cpp
+   common/geometry.cpp
+diff -NurB a/kernels/common/rtcore_bvh_builder.cpp b/kernels/common/rtcore_bvh_builder.cpp
+--- a/kernels/common/rtcore_bvh_builder.cpp	1970-01-01 01:00:00.000000000 +0100
++++ b/kernels/common/rtcore_bvh_builder.cpp	2018-02-04 00:41:04.421427458 +0100
+@@ -0,0 +1,215 @@
++// ======================================================================== //
++// Copyright 2009-2015 Intel Corporation                                    //
++//                                                                          //
++// Licensed under the Apache License, Version 2.0 (the "License");          //
++// you may not use this file except in compliance with the License.         //
++// You may obtain a copy of the License at                                  //
++//                                                                          //
++//     http://www.apache.org/licenses/LICENSE-2.0                           //
++//                                                                          //
++// Unless required by applicable law or agreed to in writing, software      //
++// distributed under the License is distributed on an "AS IS" BASIS,        //
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
++// See the License for the specific language governing permissions and      //
++// limitations under the License.                                           //
++// ======================================================================== //
++
++#ifdef _WIN32
++#  define RTCORE_API extern "C" __declspec(dllexport)
++#else
++#  define RTCORE_API extern "C" __attribute__ ((visibility ("default")))
++#endif
++
++#include "../../include/embree2/rtcore.h"
++#include "../../include/embree2/rtcore_bvh_builder.h"
++
++#include "alloc.h"
++#include "../xeon/builders/bvh_builder_sah.h"
++#include "../xeon/builders/bvh_builder_morton.h"
++
++namespace embree {
++
++//------------------------------------------------------------------------------
++// Memory related functions
++//------------------------------------------------------------------------------
++
++RTCORE_API RTCAllocator rtcNewAllocator() {
++	return (RTCAllocator) new FastAllocator(nullptr);
++}
++
++RTCORE_API void rtcDeleteAllocator(RTCAllocator allocator) {
++	FastAllocator *fastAllocator = (FastAllocator *)allocator;
++	delete fastAllocator;
++}
++
++RTCORE_API void rtcResetAllocator(RTCAllocator allocator) {
++	FastAllocator *fastAllocator = (FastAllocator *)allocator;
++	fastAllocator->reset();
++}
++
++RTCORE_API RTCThreadLocalAllocator rtcNewThreadAllocator(RTCAllocator allocator) {
++	FastAllocator *fastAllocator = (FastAllocator *)allocator;
++
++	return (RTCThreadLocalAllocator) fastAllocator->threadLocal();
++}
++
++RTCORE_API void *rtcThreadAlloc(RTCThreadLocalAllocator allocator, const size_t size) {
++	FastAllocator::ThreadLocal *threadAllocator = (FastAllocator::ThreadLocal *)allocator;
++
++	return threadAllocator->malloc(size);
++}
++
++//------------------------------------------------------------------------------
++// BVH builder related functions
++//------------------------------------------------------------------------------
++
++RTCORE_API void rtcDefaultBVHBuilderConfig(RTCBVHBuilderConfig *config) {
++	config->branchingFactor = 2;
++	config->maxDepth = 1024;
++	config->blockSize = 1;
++	config->minLeafSize = 1;
++	config->maxLeafSize = 1;
++	config->travCost = 1.f;
++	config->intCost = 1.f;
++}
++
++RTCORE_API void *rtcBVHBuilderBinnedSAH(const RTCBVHBuilderConfig *config, 
++		const RTCPrimRef *prims, const size_t primRefsSize, void *userGlobalData,
++		rtcBVHBuilderCreateLocalThreadDataFunc createLocalThreadDataFunc,
++		rtcBVHBuilderCreateNodeFunc createNodeFunc,
++		rtcBVHBuilderCreateLeafFunc createLeafFunc,
++		rtcBVHBuilderGetNodeChildrenPtrFunc getNodeChildrenPtrFunc,
++		rtcBVHBuilderGetNodeChildrenBBoxFunc getNodeChildrenBBoxFunc) {
++	isa::PrimInfo primsInfo(empty);
++	for (size_t i = 0; i < primRefsSize; i++) {
++		const BBox3fa bbox(Vec3fa::load(&prims[i].lower_x), Vec3fa::load(&prims[i].upper_x));
++		primsInfo.add(bbox);
++	}
++
++	void *root;
++	isa::BVHBuilderBinnedSAH::build<void *>(
++			root,
++			/* thread local allocator for fast allocations */
++			[&] () -> void * {
++				return createLocalThreadDataFunc(userGlobalData);
++			},
++
++			/* lambda function that creates BVH nodes */
++			[&](const isa::BVHBuilderBinnedSAH::BuildRecord &current, isa::BVHBuilderBinnedSAH::BuildRecord *children, const size_t N, void *userLocalThreadData) -> int {
++				void *node = (*createNodeFunc)(userLocalThreadData);
++				for (size_t i = 0; i < N; i++) {
++					getNodeChildrenBBoxFunc(node, i, &children[i].pinfo.geomBounds.lower.x, &children[i].pinfo.geomBounds.upper.x);
++					children[i].parent = (size_t *)getNodeChildrenPtrFunc(node, i);
++				}
++				*current.parent = (size_t)node;
++
++				return 0;
++			},
++
++			/* lambda function that creates BVH leaves */
++			[&](const isa::BVHBuilderBinnedSAH::BuildRecord &current, void *userLocalThreadData) -> int {
++				assert(current.prims.size() == 1);
++
++				const RTCPrimRef *prim = &prims[current.prims.begin()];
++				void *leaf = (*createLeafFunc)(userLocalThreadData, prim->geomID, prim->primID, &prim->lower_x, &prim->upper_x);
++				*current.parent = (size_t)leaf;
++
++				return 0;
++			},
++
++			/* progress monitor function */
++			[&] (size_t dn) {
++				// throw an exception here to cancel the build operation
++			},
++
++			(PrimRef *)prims, primsInfo,
++			config->branchingFactor,
++			config->maxDepth,
++			config->blockSize,
++			config->minLeafSize,
++			config->maxLeafSize,
++			config->travCost,
++			config->intCost);
++
++	return root;
++}
++
++RTCORE_API void *rtcBVHBuilderMorton(const RTCBVHBuilderConfig *config, 
++		const RTCPrimRef *prims, const size_t primRefsSize, void *userGlobalData,
++		rtcBVHBuilderCreateLocalThreadDataFunc createLocalThreadDataFunc,
++		rtcBVHBuilderCreateNodeFunc createNodeFunc,
++		rtcBVHBuilderCreateLeafFunc createLeafFunc,
++		rtcBVHBuilderGetNodeChildrenPtrFunc getNodeChildrenPtrFunc,
++		rtcBVHBuilderGetNodeChildrenBBoxFunc getNodeChildrenBBoxFunc) {
++	/* array for morton builder */
++	avector<isa::MortonID32Bit> morton_src(primRefsSize);
++	avector<isa::MortonID32Bit> morton_tmp(primRefsSize);
++	for (size_t i = 0; i < primRefsSize; i++)
++		morton_src[i].index = i;
++
++	std::pair<void *, BBox3fa> node_bounds = isa::bvh_builder_morton<void *>(
++
++			/* thread local allocator for fast allocations */
++			[&] () -> void * {
++				return createLocalThreadDataFunc(userGlobalData);
++			},
++
++			BBox3fa(empty),
++
++			/* lambda function that allocates BVH nodes */
++			[&] (isa::MortonBuildRecord<void *>& current, isa::MortonBuildRecord<void *> *children, size_t N, void *userLocalThreadData) -> void * {
++				void *node = (*createNodeFunc)(userLocalThreadData);
++				for (size_t i = 0; i < N; i++)
++					children[i].parent = (void **)getNodeChildrenPtrFunc(node, i);
++				*current.parent = node;
++
++				return node;
++		},
++
++		/* lambda function that sets bounds */
++		[&] (void *node, const BBox3fa *bounds, size_t N) -> BBox3fa {
++			BBox3fa res = empty;
++			for (size_t i = 0; i < N; i++) {
++				const BBox3fa b = bounds[i];
++				res.extend(b);
++				
++				getNodeChildrenBBoxFunc(node, i, &b.lower.x, &b.upper.x);
++			}
++
++			return res;
++		},
++
++		/* lambda function that creates BVH leaves */
++		[&](isa::MortonBuildRecord<void *>& current, void *userLocalThreadData, BBox3fa &box_o) -> void * {
++			const size_t id = morton_src[current.begin].index;
++			const BBox3fa bounds(Vec3fa::load(&prims[id].lower_x), Vec3fa::load(&prims[id].upper_x));
++
++			void *leaf = (*createLeafFunc)(userLocalThreadData, int(id >> 32), int(id & 0xffffffff), &bounds.lower.x, &bounds.upper.x);
++
++			*current.parent = leaf;
++			box_o = bounds;
++			return leaf;
++		},
++
++		/* lambda that calculates the bounds for some primitive */
++		[&] (const isa::MortonID32Bit &morton) -> BBox3fa {
++			const BBox3fa bounds(Vec3fa::load(&prims[morton.index].lower_x), Vec3fa::load(&prims[morton.index].upper_x));
++
++			return bounds;
++		},
++
++		/* progress monitor function */
++		[&] (size_t dn) {
++			// throw an exception here to cancel the build operation
++		},
++
++		morton_src.data(), morton_tmp.data(), primRefsSize,
++		config->branchingFactor,
++		config->maxDepth,
++		config->minLeafSize,
++		config->maxLeafSize);
++
++	return node_bounds.first;
++}
++
++}
+\ No newline at end of file
+diff -NurB a/tutorials/bvh_builder_rtc/bvh_builder_rtc.cpp b/tutorials/bvh_builder_rtc/bvh_builder_rtc.cpp
+--- a/tutorials/bvh_builder_rtc/bvh_builder_rtc.cpp	1970-01-01 01:00:00.000000000 +0100
++++ b/tutorials/bvh_builder_rtc/bvh_builder_rtc.cpp	2018-02-04 00:44:05.128434305 +0100
+@@ -0,0 +1,156 @@
++// ======================================================================== //
++// Copyright 2009-2015 Intel Corporation                                    //
++//                                                                          //
++// Licensed under the Apache License, Version 2.0 (the "License");          //
++// you may not use this file except in compliance with the License.         //
++// You may obtain a copy of the License at                                  //
++//                                                                          //
++//     http://www.apache.org/licenses/LICENSE-2.0                           //
++//                                                                          //
++// Unless required by applicable law or agreed to in writing, software      //
++// distributed under the License is distributed on an "AS IS" BASIS,        //
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
++// See the License for the specific language governing permissions and      //
++// limitations under the License.                                           //
++// ======================================================================== //
++
++#include "../common/tutorial/tutorial.h"
++#include "../common/image/image.h"
++
++namespace embree
++{
++  /* name of the tutorial */
++  const char* tutorialName = "bvh_builder_rtc";
++
++  /* configuration */
++  static std::string g_rtcore = "";
++  static size_t g_numThreads = 0;
++
++  /* output settings */
++  static size_t g_width = 512;
++  static size_t g_height = 512;
++  static bool g_fullscreen = false;
++  static FileName outFilename = "";
++
++  static void parseCommandLine(Ref<ParseStream> cin, const FileName& path)
++  {
++    while (true)
++    {
++      std::string tag = cin->getString();
++      if (tag == "") return;
++
++      /* parse command line parameters from a file */
++      if (tag == "-c") {
++        FileName file = path + cin->getFileName();
++        parseCommandLine(new ParseStream(new LineCommentFilter(file, "#")), file.path());
++      }
++
++      /* parse camera parameters */
++      else if (tag == "-vp") g_camera.from = cin->getVec3fa();
++      else if (tag == "-vi") g_camera.to = cin->getVec3fa();
++      else if (tag == "-vd") g_camera.to = g_camera.from + cin->getVec3fa();
++      else if (tag == "-vu") g_camera.up = cin->getVec3fa();
++      else if (tag == "-fov") g_camera.fov = cin->getFloat();
++
++      /* frame buffer size */
++      else if (tag == "-size") {
++        g_width = cin->getInt();
++        g_height = cin->getInt();
++      }
++
++      /* full screen mode */
++      else if (tag == "-fullscreen") 
++        g_fullscreen = true;
++      
++      /* output filename */
++      else if (tag == "-o")
++        outFilename = cin->getFileName();
++
++      /* rtcore configuration */
++      else if (tag == "-rtcore")
++        g_rtcore = cin->getString();
++
++      /* number of threads to use */
++      else if (tag == "-threads")
++        g_numThreads = cin->getInt();
++
++      /* skip unknown command line parameter */
++      else {
++        std::cerr << "unknown command line parameter: " << tag << " ";
++        while (cin->peek() != "" && cin->peek()[0] != '-') std::cerr << cin->getString() << " ";
++        std::cerr << std::endl;
++      }
++    }
++  }
++
++  void renderToFile(const FileName& fileName)
++  {
++    resize(g_width,g_height);
++    AffineSpace3fa pixel2world = g_camera.pixel2world(g_width,g_height);
++
++    render(0.0f,
++           pixel2world.l.vx,
++           pixel2world.l.vy,
++           pixel2world.l.vz,
++           pixel2world.p);
++    
++    void* ptr = map();
++    Ref<Image> image = new Image4uc(g_width, g_height, (Col4uc*)ptr);
++    storeImage(image, fileName);
++    unmap();
++  }
++
++  /* main function in embree namespace */
++  int main(int argc, char** argv) 
++  {
++    /* for best performance set FTZ and DAZ flags in MXCSR control and status register */
++    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
++    _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
++
++    /* set default camera */
++    g_camera.from = Vec3fa(1.5f,1.5f,-1.5f);
++    g_camera.to   = Vec3fa(0.0f,0.0f,0.0f);
++
++    /* create stream for parsing */
++    Ref<ParseStream> stream = new ParseStream(new CommandLineStream(argc, argv));
++
++    /* parse command line */  
++    parseCommandLine(stream, FileName());
++    if (g_numThreads) 
++      g_rtcore += ",threads=" + toString(g_numThreads);
++
++    /* initialize ray tracing core */
++    init(g_rtcore.c_str());
++
++#if 0
++    /* render to disk */
++    if (outFilename.str() != "") {
++      renderToFile(outFilename);
++      return 0;
++    } 
++
++    /* initialize GLUT */
++    initWindowState(argc,argv,tutorialName, g_width, g_height, g_fullscreen);
++    
++    /* enter the GLUT run loop */
++    enterWindowRunLoop();
++#endif
++
++    return 0;
++  }
++}
++
++int main(int argc, char** argv)
++{
++  try {
++    return embree::main(argc, argv);
++  }
++  catch (const std::exception& e) {
++    std::cout << "Error: " << e.what() << std::endl;
++    return 1;
++  }
++  catch (...) {
++    std::cout << "Error: unknown exception caught." << std::endl;
++    return 1;
++  }
++}
+diff -NurB a/tutorials/bvh_builder_rtc/bvh_builder_rtc_device.cpp b/tutorials/bvh_builder_rtc/bvh_builder_rtc_device.cpp
+--- a/tutorials/bvh_builder_rtc/bvh_builder_rtc_device.cpp	1970-01-01 01:00:00.000000000 +0100
++++ b/tutorials/bvh_builder_rtc/bvh_builder_rtc_device.cpp	2018-02-04 00:44:34.657435424 +0100
+@@ -0,0 +1,335 @@
++// ======================================================================== //
++// Copyright 2009-2015 Intel Corporation                                    //
++//                                                                          //
++// Licensed under the Apache License, Version 2.0 (the "License");          //
++// you may not use this file except in compliance with the License.         //
++// You may obtain a copy of the License at                                  //
++//                                                                          //
++//     http://www.apache.org/licenses/LICENSE-2.0                           //
++//                                                                          //
++// Unless required by applicable law or agreed to in writing, software      //
++// distributed under the License is distributed on an "AS IS" BASIS,        //
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
++// See the License for the specific language governing permissions and      //
++// limitations under the License.                                           //
++// ======================================================================== //
++
++#include <functional>
++
++#include "../common/tutorial/tutorial_device.h"
++#include "../../kernels/common/alloc.h"
++#include "../../include/embree2/rtcore_bvh_builder.h"
++
++RTCDevice g_device = nullptr;
++RTCScene g_scene  = nullptr;
++
++/* render function to use */
++renderPixelFunc renderPixel;
++
++/* error reporting function */
++void error_handler(const RTCError code, const char* str = NULL)
++{
++  if (code == RTC_NO_ERROR) 
++    return;
++
++  printf("Embree: ");
++  switch (code) {
++  case RTC_UNKNOWN_ERROR    : printf("RTC_UNKNOWN_ERROR"); break;
++  case RTC_INVALID_ARGUMENT : printf("RTC_INVALID_ARGUMENT"); break;
++  case RTC_INVALID_OPERATION: printf("RTC_INVALID_OPERATION"); break;
++  case RTC_OUT_OF_MEMORY    : printf("RTC_OUT_OF_MEMORY"); break;
++  case RTC_UNSUPPORTED_CPU  : printf("RTC_UNSUPPORTED_CPU"); break;
++  case RTC_CANCELLED        : printf("RTC_CANCELLED"); break;
++  default                   : printf("invalid error code"); break;
++  }
++  if (str) { 
++    printf(" ("); 
++    while (*str) putchar(*str++); 
++    printf(")\n"); 
++  }
++  exit(1);
++}
++
++/* These function called by the builder to signal progress and to
++ * report memory consumption. */
++namespace embree
++{
++  void memoryMonitor(ssize_t bytes, bool post)
++  {
++    // throw an exception here when nprims>0 to cancel the build operation
++  }
++}
++
++struct Node
++{
++  virtual float sah() = 0;
++};
++
++struct InnerNode : public Node
++{
++  BBox3fa bounds[2];
++  Node* children[2];
++
++  InnerNode() {
++    bounds[0] = bounds[1] = empty;
++    children[0] = children[1] = nullptr;
++  }
++  
++  float sah() {
++    return 1.f + (area(bounds[0])*children[0]->sah() + area(bounds[1])*children[1]->sah())/area(merge(bounds[0],bounds[1]));
++  }
++};
++
++struct LeafNode : public Node
++{
++  size_t id;
++  BBox3fa bounds;
++
++  LeafNode (size_t id, const BBox3fa& bounds)
++    : id(id), bounds(bounds) {}
++
++  float sah() {
++    return 1.f;
++  }
++};
++
++//------------------------------------------------------------------------------
++
++static void *CreateAllocFunc(void *userData) {
++	RTCAllocator fastAllocator = *((RTCAllocator *)userData);
++
++	return rtcNewThreadAllocator(fastAllocator);
++}
++
++static void *CreateNodeFunc(void *localAllocator) {
++	RTCThreadLocalAllocator fastLocalAllocator = (RTCThreadLocalAllocator)localAllocator;
++	return new (rtcThreadAlloc(fastLocalAllocator, sizeof(InnerNode))) InnerNode();
++}
++
++static void *CreateLeafFunc(void *localAllocator, const int geomID, const int primID,
++		const float lower[3], const float upper[3]) {
++	RTCThreadLocalAllocator fastLocalAllocator = (RTCThreadLocalAllocator)localAllocator;
++	const BBox3fa bbox(Vec3fa::load(lower), Vec3fa::load(upper));
++
++	return new (rtcThreadAlloc(fastLocalAllocator, sizeof(LeafNode))) LeafNode(size_t(geomID) + (size_t(primID) << 32), bbox);
++}
++
++static void *NodeChildrenPtrFunc(void *n, const size_t i) {
++	InnerNode *node = (InnerNode *)n;
++	return &node->children[i];
++}
++
++static void NodeChildrenSetBBoxFunc(void *n, const size_t i, const float lower[3], const float upper[3]) {
++	InnerNode *node = (InnerNode *)n;
++
++	node->bounds[i].lower.x = lower[0];
++	node->bounds[i].lower.y = lower[1];
++	node->bounds[i].lower.z = lower[2];
++
++	node->bounds[i].upper.x = upper[0];
++	node->bounds[i].upper.y = upper[1];
++	node->bounds[i].upper.z = upper[2];
++}
++
++void build_sah(avector<RTCPrimRef>& prims) {
++	RTCAllocator fastAllocator = rtcNewAllocator();
++
++	for (size_t i = 0; i < 2; i++) {
++		std::cout << "iteration " << i << ": building BVH over " << prims.size() << " primitives, " << std::flush;
++		double t0 = getSeconds();
++
++		rtcResetAllocator(fastAllocator);
++
++		RTCBVHBuilderConfig config;
++		rtcDefaultBVHBuilderConfig(&config);
++
++		Node *root = (Node *) rtcBVHBuilderBinnedSAH(&config,
++				&prims[0], prims.size(),
++				&fastAllocator,
++				&CreateAllocFunc, &CreateNodeFunc, &CreateLeafFunc,
++				&NodeChildrenPtrFunc, &NodeChildrenSetBBoxFunc);
++
++		double t1 = getSeconds();
++		std::cout << 1000.0f * (t1 - t0) << "ms, " << 1E-6 * double(prims.size()) / (t1 - t0) << " Mprims/s, sah = " << root->sah() << " [DONE]" << std::endl;
++	}
++
++	rtcDeleteAllocator(fastAllocator);
++}
++
++//------------------------------------------------------------------------------
++
++static void *CreateAllocSystemAllocatorFunc(void *userData) {
++	return NULL;
++}
++
++static void *CreateNodeSystemAllocatorFunc(void *localAllocator) {
++	return new InnerNode();
++}
++
++static void *CreateLeafSystemAllocatorFunc(void *localAllocator, const int geomID, const int primID,
++		const float lower[3], const float upper[3]) {
++	const BBox3fa bbox(Vec3fa::load(lower), Vec3fa::load(upper));
++
++	return new LeafNode(size_t(geomID) + (size_t(primID) << 32), bbox);
++}
++
++static void FreeTree(Node *node) {
++	InnerNode *innerNode = dynamic_cast<InnerNode *>(node);
++	if (innerNode) {
++		FreeTree(innerNode->children[0]);
++		FreeTree(innerNode->children[1]);
++	}
++
++	delete node;
++}
++
++//------------------------------------------------------------------------------
++
++void build_morton(avector<RTCPrimRef>& prims) {
++	RTCAllocator fastAllocator = rtcNewAllocator();
++
++	for (size_t i = 0; i < 2; i++) {
++		std::cout << "iteration " << i << ": building BVH over " << prims.size() << " primitives, " << std::flush;
++		double t0 = getSeconds();
++
++		rtcResetAllocator(fastAllocator);
++
++		RTCBVHBuilderConfig config;
++		rtcDefaultBVHBuilderConfig(&config);
++
++		Node *root = (Node *) rtcBVHBuilderMorton(&config,
++				&prims[0], prims.size(),
++				&fastAllocator,
++				&CreateAllocFunc, &CreateNodeFunc, &CreateLeafFunc,
++				&NodeChildrenPtrFunc, &NodeChildrenSetBBoxFunc);
++
++		double t1 = getSeconds();
++		std::cout << 1000.0f * (t1 - t0) << "ms, " << 1E-6 * double(prims.size()) / (t1 - t0) << " Mprims/s, sah = " << root->sah() << " [DONE]" << std::endl;
++	}
++
++	rtcDeleteAllocator(fastAllocator);
++}
++
++void build_sah_system_memory(avector<RTCPrimRef>& prims) {
++	for (size_t i = 0; i < 2; i++) {
++		std::cout << "iteration " << i << ": building BVH over " << prims.size() << " primitives, " << std::flush;
++		double t0 = getSeconds();
++
++		RTCBVHBuilderConfig config;
++		rtcDefaultBVHBuilderConfig(&config);
++
++		Node *root = (Node *) rtcBVHBuilderBinnedSAH(&config,
++				&prims[0], prims.size(),
++				NULL,
++				&CreateAllocSystemAllocatorFunc, &CreateNodeSystemAllocatorFunc, &CreateLeafSystemAllocatorFunc,
++				&NodeChildrenPtrFunc, &NodeChildrenSetBBoxFunc);
++
++		double t1 = getSeconds();
++		std::cout << 1000.0f * (t1 - t0) << "ms, " << 1E-6 * double(prims.size()) / (t1 - t0) << " Mprims/s, sah = " << root->sah() << " [DONE]" << std::endl;
++
++		// Free the allocated memory
++		FreeTree(root);
++	}
++}
++
++//------------------------------------------------------------------------------
++
++/* called by the C++ code for initialization */
++extern "C" void device_init (char* cfg)
++{
++  /* create new Embree device */
++  g_device = rtcNewDevice(cfg);
++  error_handler(rtcDeviceGetError(g_device));
++
++  /* set error handler */
++  rtcDeviceSetErrorFunction(g_device,error_handler);
++  
++  /* set start render mode */
++  renderPixel = renderPixelStandard;
++
++  /* create random bounding boxes */
++  const size_t N = 2300000;
++  avector<RTCPrimRef> prims; 
++  for (size_t i=0; i<N; i++) {
++    const Vec3fa p = 1000.0f*Vec3fa(drand48(),drand48(),drand48());
++    const BBox3fa b = BBox3fa(p,p+Vec3fa(1.0f));
++
++    RTCPrimRef prim;
++	prim.lower_x = b.lower.x;
++	prim.lower_y = b.lower.y;
++	prim.lower_z = b.lower.z;
++	prim.geomID = 0;
++	prim.upper_x = b.upper.x;
++	prim.upper_y = b.upper.y;
++	prim.upper_z = b.upper.z;
++	prim.primID = i;
++
++    prims.push_back(prim);
++  }
++
++  std::cout << "Build SAH with system memory allocator" << std::endl;
++  build_sah_system_memory(prims);
++  std::cout << "Build SAH with RTC allocator" << std::endl;
++  build_sah(prims);
++  std::cout << "Build Morton with RTC allocator" << std::endl;
++  build_morton(prims);
++}
++
++/* task that renders a single screen tile */
++Vec3fa renderPixelStandard(float x, float y, const Vec3fa& vx, const Vec3fa& vy, const Vec3fa& vz, const Vec3fa& p)
++{
++  return Vec3fa(zero);
++}
++
++/* task that renders a single screen tile */
++void renderTile(int taskIndex, int* pixels,
++                     const int width,
++                     const int height, 
++                     const float time,
++                     const Vec3fa& vx, 
++                     const Vec3fa& vy, 
++                     const Vec3fa& vz, 
++                     const Vec3fa& p,
++                     const int numTilesX, 
++                     const int numTilesY)
++{
++  const int tileY = taskIndex / numTilesX;
++  const int tileX = taskIndex - tileY * numTilesX;
++  const int x0 = tileX * TILE_SIZE_X;
++  const int x1 = min(x0+TILE_SIZE_X,width);
++  const int y0 = tileY * TILE_SIZE_Y;
++  const int y1 = min(y0+TILE_SIZE_Y,height);
++
++  for (int y = y0; y<y1; y++) for (int x = x0; x<x1; x++)
++  {
++    /* calculate pixel color */
++    Vec3fa color = renderPixel(x,y,vx,vy,vz,p);
++    
++    /* write color to framebuffer */
++    unsigned int r = (unsigned int) (255.0f * clamp(color.x,0.0f,1.0f));
++    unsigned int g = (unsigned int) (255.0f * clamp(color.y,0.0f,1.0f));
++    unsigned int b = (unsigned int) (255.0f * clamp(color.z,0.0f,1.0f));
++    pixels[y*width+x] = (b << 16) + (g << 8) + r;
++  }
++}
++
++/* called by the C++ code to render */
++extern "C" void device_render (int* pixels,
++                    const int width,
++                    const int height,
++                    const float time,
++                    const Vec3fa& vx, 
++                    const Vec3fa& vy, 
++                    const Vec3fa& vz, 
++                    const Vec3fa& p)
++{
++  const int numTilesX = (width +TILE_SIZE_X-1)/TILE_SIZE_X;
++  const int numTilesY = (height+TILE_SIZE_Y-1)/TILE_SIZE_Y;
++  launch_renderTile(numTilesX*numTilesY,pixels,width,height,time,vx,vy,vz,p,numTilesX,numTilesY); 
++}
++
++/* called by the C++ code for cleanup */
++extern "C" void device_cleanup () {
++  rtcDeleteDevice(g_device);
++}
++
+diff -NurB a/tutorials/bvh_builder_rtc/CMakeLists.txt b/tutorials/bvh_builder_rtc/CMakeLists.txt
+--- a/tutorials/bvh_builder_rtc/CMakeLists.txt	1970-01-01 01:00:00.000000000 +0100
++++ b/tutorials/bvh_builder_rtc/CMakeLists.txt	2018-02-04 00:43:34.217433134 +0100
+@@ -0,0 +1,27 @@
++## ======================================================================== ##
++## Copyright 2009-2015 Intel Corporation                                    ##
++##                                                                          ##
++## Licensed under the Apache License, Version 2.0 (the "License");          ##
++## you may not use this file except in compliance with the License.         ##
++## You may obtain a copy of the License at                                  ##
++##                                                                          ##
++##     http://www.apache.org/licenses/LICENSE-2.0                           ##
++##                                                                          ##
++## Unless required by applicable law or agreed to in writing, software      ##
++## distributed under the License is distributed on an "AS IS" BASIS,        ##
++## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. ##
++## See the License for the specific language governing permissions and      ##
++## limitations under the License.                                           ##
++## ======================================================================== ##
++
++SET(ENABLE_ISPC_SUPPORT OFF)
++
++IF (TASKING_INTERNAL)
++  ADD_DEFINITIONS(-DTASKING_TBB_INTERNAL)
++ELSE()
++  ADD_DEFINITIONS(-DTASKING_TBB) # FIXME: should not be necessary
++  SET(ADDITIONAL_LIBRARIES ${TBB_LIBRARIES})
++ENDIF()
++
++INCLUDE(tutorial)
++ADD_TUTORIAL(bvh_builder_rtc)
+diff -NurB a/tutorials/CMakeLists.txt b/tutorials/CMakeLists.txt
+--- a/tutorials/CMakeLists.txt	2017-06-28 15:11:17.000000000 +0200
++++ b/tutorials/CMakeLists.txt	2018-02-04 00:46:24.547439588 +0100
+@@ -28,6 +28,7 @@
+ ADD_SUBDIRECTORY(subdivision_geometry)
+ ADD_SUBDIRECTORY(displacement_geometry)
+ ADD_SUBDIRECTORY(bvh_builder)
++ADD_SUBDIRECTORY(bvh_builder_rtc)
+ ADD_SUBDIRECTORY(lazy_geometry)
+ ADD_SUBDIRECTORY(bvh_access)
+ ADD_SUBDIRECTORY(motion_blur_geometry)
