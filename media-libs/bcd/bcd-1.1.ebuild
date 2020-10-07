@@ -41,6 +41,8 @@ local mycmakeargs=(
 src_install() {
 
 	cmake-utils_src_install
-	insinto /usr/include/bcd
-	doins -r include/bcd/core
+	insinto /usr/include/${PN}
+	doins -r include/${PN}/core
+	insinto /usr/share/${PN}/cmake
+	newins ${FILESDIR}/FindBCD.cmake ${PN}-config.cmake
 }

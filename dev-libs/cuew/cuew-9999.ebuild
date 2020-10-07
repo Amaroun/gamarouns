@@ -33,4 +33,6 @@ src_install() {
 	dolib.so ${BUILD_DIR}/*.so
 	dobin ${BUILD_DIR}/testcuew
 	doheader -r include/*
+	insinto usr/share/${PN}/cmake
+	newins ${FILESDIR}/Findcuew.cmake cuewConfig.cmake
 }

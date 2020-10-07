@@ -4,18 +4,20 @@
 
 EAPI="5"
 
-inherit cmake-utils flag-o-matic mercurial versionator
+inherit cmake-utils flag-o-matic versionator
 
 DESCRIPTION="A GPL OpenCL Benchmark."
 HOMEPAGE="http://www.luxmark.info"
-EHG_REPO_URI="https://bitbucket.org/luxrender/luxmark"
 
 if [[ "$PV" == "9999" ]] ; then
-	SRC_URI="https://bytebucket.org/luxrender/lux/raw/tip/luxrender.svg"
+	inherit mercurial
+	SRC_URI="https://raw.githubusercontent.com/FreeCAD/FreeCAD-render/master/icons/Luxcore.svg"
+	EHG_REPO_URI="https://bitbucket.org/luxrender/luxmark"
 else
-	VER_MAJ_MIN="$(get_version_component_range 1-2)"
-	EHG_REVISION="${PN}_v${VER_MAJ_MIN}"
-	SRC_URI="https://bytebucket.org/luxrender/lux/raw/203f2dad3260679802868560f1dac3c9bfee51a1/luxrender.svg"
+	DV=${PV//_alpha/alpha}
+	SRC_URI="https://github.com/LuxCoreRender/LuxMark/archive/${PN}_v${DV}.tar.gz
+	https://raw.githubusercontent.com/FreeCAD/FreeCAD-render/master/icons/Luxcore.svg"
+	S="${WORKDIR}/LuxMark-${PN}_v${DV}"
 fi
 
 LICENSE="GPL-3"
@@ -23,52 +25,82 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
-RDEPEND=">=dev-libs/boost-1.43:=[python]
-	media-libs/luxrays:=[debug?,opencl=]
+
+RDEPEND="dev-libs/boost:=[python]
+	dev-libs/clew
+	media-libs/luxcorerender:=[debug=,opencl=]
 	media-libs/openimageio
+	media-libs/oidn
 	virtual/opengl
-	virtual/opencl
+	opencl? (
+		virtual/opencl
+		dev-libs/clhpp
+		)
 	media-libs/freeglut
 	media-libs/glew
-	app-benchmarks/luxmark-scenes
-        dev-qt/qtcore:4
-        dev-qt/qtgui:4
-        dev-qt/qtnetwork:4
-        dev-qt/qtopengl:4
+	media-libs/embree
+	app-benchmarks/luxmark-scenes:4
+	dev-qt/qtcore
+	dev-qt/qtgui
+	dev-qt/qtnetwork
+	dev-qt/qtopengl
 	"
 DEPEND="${RDEPEND}
 	sys-devel/bison
 	sys-devel/flex
 	"
 
+PATCHES+=(
+	"${FILESDIR}/${PN}-4.0_cmake_python.patch"
+	"${FILESDIR}/${PN}_system_deps.patch"
+	"${FILESDIR}/${PN}_autogen.patch"
+	"${FILESDIR}/${PN}-4_openclhpp.patch"
+	)
+
 src_prepare() {
-	epatch "${FILESDIR}/${PN}-slg_renderengine_h_location.patch"
+#	if use debug ; then
+#		PATCHES+=( "${FILESDIR}/${P}_luxcorerender_shared.patch" )
+#	else
+#		PATCHES+=( "${FILESDIR}/${P}_luxcorerender_static.patch" )
+#	fi
+	rm "${S}/cmake/Packages/FindOpenCL.cmake"
+	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
+	cp "${FILESDIR}/FindBCD.cmake" "${S}/cmake"
+	cp "${FILESDIR}/Findclew.cmake" "${S}/cmake"
+	cmake-utils_src_prepare
+
 }
 
 src_configure() {
 	use cpu_flags_x86_sse && append-flags "-msse -DLUX_USE_SSE"
         use cpu_flags_x86_sse2 && append-flags "-msse2"
 
-	use debug && append-flags -ggdb
-	local mycmakeargs=""
+        if use debug ; then
+		append-flags -ggdb
+		CMAKE_BUILD_TYPE="Debug"
+        else
+		CMAKE_BUILD_TYPE="Release"
+        fi
+
+	local mycmakeargs="-DCMAKE_AUTOMOC=OFF"
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
-
-       !use opencl && mycmakeargs=("${mycmakeargs}
-                  -DLUXRAYS_DISABLE_OPENCL=ON")
-
+	! use opencl && mycmakeargs+=("${mycmakeargs}
+		  -DLUXRAYS_DISABLE_OPENCL=ON")
+	mycmakeargs+=("-DPYTHON_V=36")
 	cmake-utils_src_configure
 }
 
 src_install() {
-#	cmake-utils_src_install
+
 	dobin "${CMAKE_BUILD_DIR}"/bin/luxmark
 	dodoc AUTHORS.txt || die
+	if ! use no_icon ; then
+		doicon ${DISTDIR}/Luxcore.svg
+	fi
 
-	doicon ${DISTDIR}/luxrender.svg
 
-
-	make_desktop_entry "${PN}" "${PN}" "luxrender" "Utility" "Path=/usr/share/${PN}"
+	make_desktop_entry "${PN}" "${PN}" "Luxcore" "Utility" "Path=/usr/share/${PN}"
 
 }

@@ -27,9 +27,9 @@ PATCHES+=(
         )
 
 
-#src_install() {
-#	dolib.so ${BUILD_DIR}/*.so
-#	dobin ${BUILD_DIR}/testcuew
-#	doheader -r include/*
-#}
+src_install() {
+	cmake-utils_src_install
+	insinto usr/share/${PN}/cmake
+	newins ${FILESDIR}/Findclew.cmake ${PN}-config.cmake
+}
 
