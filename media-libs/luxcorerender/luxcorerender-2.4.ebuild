@@ -50,20 +50,14 @@ DEPEND="${RDEPEND}"
 
 PATCHES+=(
 	"${FILESDIR}/${PN}-2.4_python.patch"
+	"${FILESDIR}/${PN}-2.4_system_deps.patch"
         )
 
 src_prepare() {
 
 	rm -r "${S}/deps"
 	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
-	cp "${FILESDIR}/FindBCD.cmake" "${S}/cmake"
-	cp "${FILESDIR}/Findcuew.cmake" "${S}/cmake"
-	cp "${FILESDIR}/Findclew.cmake" "${S}/cmake"
 	cp "${FILESDIR}/FindOpenSubdiv.cmake" "${S}/cmake"
-
-	PATCHES+=(
-	"${FILESDIR}/${PN}-2.4_system_deps.patch"
-        )
 
 #	if use shared ; then
 #		PATCHES+=(

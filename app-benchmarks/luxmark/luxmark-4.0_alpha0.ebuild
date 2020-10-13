@@ -26,12 +26,16 @@ KEYWORDS="~amd64 ~x86"
 IUSE="cpu_flags_x86_sse cpu_flags_x86_sse2 opencl -no_icon scenes debug"
 
 
-RDEPEND=">=dev-libs/boost-1.43:=[python]
+RDEPEND="dev-libs/boost:=[python]
+	dev-libs/clew
 	media-libs/luxcorerender:=[debug=,opencl=]
 	media-libs/openimageio
 	media-libs/oidn
 	virtual/opengl
-	opencl? ( virtual/opencl )
+	opencl? (
+		virtual/opencl
+		dev-libs/clhpp
+		)
 	media-libs/freeglut
 	media-libs/glew
 	media-libs/embree
@@ -48,8 +52,11 @@ DEPEND="${RDEPEND}
 
 PATCHES+=(
 	"${FILESDIR}/${PN}-4.0_cmake_python.patch"
+	"${FILESDIR}/${PN}-4_opencl.patch"
 	"${FILESDIR}/${PN}_system_deps.patch"
 	"${FILESDIR}/${PN}_autogen.patch"
+	"${FILESDIR}/${PN}-4_openclhpp.patch"
+	"${FILESDIR}/${PN}-4_clew.patch"
 	)
 
 src_prepare() {
@@ -58,8 +65,8 @@ src_prepare() {
 #	else
 #		PATCHES+=( "${FILESDIR}/${P}_luxcorerender_static.patch" )
 #	fi
+	rm "${S}/cmake/Packages/FindOpenCL.cmake"
 	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
-	cp "${FILESDIR}/FindBCD.cmake" "${S}/cmake"
 	cmake-utils_src_prepare
 
 }
