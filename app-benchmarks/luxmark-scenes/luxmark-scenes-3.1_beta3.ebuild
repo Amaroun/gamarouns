@@ -15,7 +15,7 @@ DOWNLOAD_VERSION="$(delete_version_separator 2 )"
 SRC_URI="https://bitbucket.org/luxrender/luxmark/downloads/${PN/luxmark-/}-v${DOWNLOAD_VERSION}.zip"
 
 LICENSE="GPL-3"
-SLOT="0"
+SLOT="3"
 KEYWORDS="~amd64 ~x86"
 
 S=$WORKDIR

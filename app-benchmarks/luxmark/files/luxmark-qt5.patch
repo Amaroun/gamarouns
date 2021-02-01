@@ -1,6 +1,6 @@
-diff -NurB /tmp/a/CMakeLists.txt /tmp/b/CMakeLists.txt
---- /tmp/a/CMakeLists.txt	2018-05-29 15:20:13.518028860 +0200
-+++ /tmp/b/CMakeLists.txt	2018-05-29 15:22:32.598029827 +0200
+diff -NurB a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt	2018-05-29 15:20:13.518028860 +0200
++++ b/CMakeLists.txt	2018-05-29 15:22:32.598029827 +0200
 @@ -107,7 +107,7 @@
          SET(BOOST_LIBRARYDIR          "$ENV{LIB_DIR}")
          SET(QT_HEADERS_DIR            "$ENV{INCLUDE_DIR}/Qt/include")
@@ -10,9 +10,9 @@ diff -NurB /tmp/a/CMakeLists.txt /tmp/b/CMakeLists.txt
          SET(QT_QTGUI_INCLUDE_DIR      "$ENV{INCLUDE_DIR}/Qt/include/QtGui")
          SET(QT_QMAKE_EXECUTABLE       "$ENV{LIB_DIR}/qmake.exe")
          SET(QT_BINARY_DIR             "$ENV{LIB_DIR}")
-diff -NurB /tmp/a/src/CMakeLists.txt /tmp/b/src/CMakeLists.txt
---- /tmp/a/src/CMakeLists.txt	2018-05-29 15:20:13.574028861 +0200
-+++ /tmp/b/src/CMakeLists.txt	2018-05-29 16:13:36.593051117 +0200
+diff -NurB a/src/CMakeLists.txt b/src/CMakeLists.txt
+--- a/src/CMakeLists.txt	2018-05-29 15:20:13.574028861 +0200
++++ b/src/CMakeLists.txt	2018-05-29 16:13:36.593051117 +0200
 @@ -22,13 +22,13 @@
  set(LUXMARK_VERSION_MAJOR 3)
  set(LUXMARK_VERSION_MINOR 1)
@@ -75,9 +75,9 @@ diff -NurB /tmp/a/src/CMakeLists.txt /tmp/b/src/CMakeLists.txt
  	
  	# This instructs FREEGLUT to emit a pragma for the static version
  	SET_TARGET_PROPERTIES(luxmark PROPERTIES COMPILE_DEFINITIONS FREEGLUT_STATIC)
-diff -NurB /tmp/a/src/luxmarkapp.h /tmp/b/src/luxmarkapp.h
---- /tmp/a/src/luxmarkapp.h	2018-05-29 15:20:13.575028861 +0200
-+++ /tmp/b/src/luxmarkapp.h	2018-05-29 16:16:28.499052311 +0200
+diff -NurB a/src/luxmarkapp.h b/src/luxmarkapp.h
+--- a/src/luxmarkapp.h	2018-05-29 15:20:13.575028861 +0200
++++ b/src/luxmarkapp.h	2018-05-29 16:16:28.499052311 +0200
 @@ -23,7 +23,7 @@
  #define _LUXMARKAPP_H
  
@@ -87,9 +87,9 @@ diff -NurB /tmp/a/src/luxmarkapp.h /tmp/b/src/luxmarkapp.h
  #include <QTimer>
  
  #include <boost/thread.hpp>
-diff -NurB /tmp/a/src/main.cpp /tmp/b/src/main.cpp
---- /tmp/a/src/main.cpp	2018-05-29 15:20:13.575028861 +0200
-+++ /tmp/b/src/main.cpp	2018-05-29 16:20:12.855053870 +0200
+diff -NurB a/src/main.cpp b/src/main.cpp
+--- a/src/main.cpp	2018-05-29 15:20:13.575028861 +0200
++++ b/src/main.cpp	2018-05-29 16:20:12.855053870 +0200
 @@ -27,7 +27,7 @@
  #include "luxmarkapp.h"
  
@@ -126,9 +126,9 @@ diff -NurB /tmp/a/src/main.cpp /tmp/b/src/main.cpp
  			PrintCmdLineHelp(argsList.at(0));
  			exit = true;
  			break;
-diff -NurB /tmp/a/src/mainwindow.cpp /tmp/b/src/mainwindow.cpp
---- /tmp/a/src/mainwindow.cpp	2018-05-29 15:20:13.575028861 +0200
-+++ /tmp/b/src/mainwindow.cpp	2018-05-29 16:21:27.987054392 +0200
+diff -NurB a/src/mainwindow.cpp b/src/mainwindow.cpp
+--- a/src/mainwindow.cpp	2018-05-29 15:20:13.575028861 +0200
++++ b/src/mainwindow.cpp	2018-05-29 16:21:27.987054392 +0200
 @@ -367,7 +367,7 @@
  }
  
@@ -138,9 +138,9 @@ diff -NurB /tmp/a/src/mainwindow.cpp /tmp/b/src/mainwindow.cpp
  	int eventtype = event->type();
  
  	// Check if it's one of "our" events
-diff -NurB /tmp/a/src/submitdialog.cpp /tmp/b/src/submitdialog.cpp
---- /tmp/a/src/submitdialog.cpp	2018-05-29 15:20:13.576028861 +0200
-+++ /tmp/b/src/submitdialog.cpp	2018-05-29 19:28:57.422033502 +0200
+diff -NurB a/src/submitdialog.cpp b/src/submitdialog.cpp
+--- a/src/submitdialog.cpp	2018-05-29 15:20:13.576028861 +0200
++++ b/src/submitdialog.cpp	2018-05-29 19:28:57.422033502 +0200
 @@ -21,6 +21,7 @@
  
  #include <QDateTime>
