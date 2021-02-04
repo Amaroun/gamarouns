@@ -1,0 +1,173 @@
+diff -NurB a/CMakeLists.txt embree-3.12.2/CMakeLists.txt
+--- a/CMakeLists.txt	2021-02-04 06:17:39.362036215 +0000
++++ embree-3.12.2/CMakeLists.txt	2021-02-04 10:08:50.583463969 +0000
+@@ -229,6 +229,12 @@
+ ##############################################################
+ # ISA configuration
+ ##############################################################
++SET(NONE 0)
++SET(SSE2 1)
++SET(SSE42 2)
++SET(AVX 3)
++SET(AVX2 4)
++SET(AVX512 5)
+ 
+ # just for compatibility with old naming
+ IF(DEFINED EMBREE_ISA_AVX512SKX)
+@@ -244,12 +250,7 @@
+ SET_PROPERTY(CACHE EMBREE_MAX_ISA PROPERTY STRINGS NONE SSE2 SSE4.2 AVX AVX2 AVX512 DEFAULT)
+ 
+ IF (EMBREE_MAX_ISA STREQUAL "NONE")
+-  TRY_COMPILE(COMPILER_SUPPORTS_AVX    ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/common/cmake/check_isa.cpp COMPILE_DEFINITIONS ${FLAGS_AVX})
+-  TRY_COMPILE(COMPILER_SUPPORTS_AVX2   ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/common/cmake/check_isa.cpp COMPILE_DEFINITIONS ${FLAGS_AVX2})
+-  TRY_COMPILE(COMPILER_SUPPORTS_AVX512 ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/common/cmake/check_isa.cpp COMPILE_DEFINITIONS ${FLAGS_AVX512})
+ 
+-  OPTION(EMBREE_ISA_SSE2 "Enables SSE2 ISA." ON)
+-  OPTION(EMBREE_ISA_SSE42 "Enables SSE4.2 ISA." ON)
+   OPTION(EMBREE_ISA_AVX "Enables AVX ISA." ${COMPILER_SUPPORTS_AVX})
+   OPTION(EMBREE_ISA_AVX2 "Enables AVX2 ISA." ${COMPILER_SUPPORTS_AVX2})
+   IF (WIN32 OR APPLE)
+@@ -257,6 +258,25 @@
+   ELSE()
+     OPTION(EMBREE_ISA_AVX512 "Enables AVX512 ISA." ${COMPILER_SUPPORTS_AVX512})
+   ENDIF()
++
++  IF(EMBREE_ISA_AVX512SKX)
++    SET(ISA  ${AVX512})
++  ELSEIF(EMBREE_ISA_AVX512)
++    SET(ISA  ${AVX512})
++  ELSEIF(EMBREE_ISA_AVX2)
++    SET(ISA  ${AVX512})
++  ELSEIF(EMBREE_ISA_AVX)
++    SET(ISA  ${AVX})
++  ELSEIF(EMBREE_ISA_SSE4.2)
++    SET(ISA  ${SSE4.2})
++  ELSEIF(EMBREE_ISA_SSE2)
++    SET(ISA  ${SSE2})
++  ELSE()
++    SET(ISA  ${SSE4.2})
++  ENDIF()
++
++  MESSAGE( "ISA: ${ISA}")
++
+ ELSEIF (EMBREE_MAX_ISA STREQUAL "DEFAULT")
+   UNSET(EMBREE_ISA_SSE2 CACHE)
+   UNSET(EMBREE_ISA_SSE42 CACHE)
+@@ -356,14 +376,9 @@
+ # ISA configuration continued
+ ##############################################################
+ 
+-SET(SSE2 0)
+-SET(SSE42 1)
+-SET(AVX 2)
+-SET(AVX2 3)
+-SET(AVX512 4)
+-
+ UNSET(FLAGS_LOWEST)
+-SET(ISA_LOWEST_AVX 2)
++SET(ISA_LOWEST ${NONE})
++UNSET(ISA_LOWEST_AVX)
+ 
+ IF (EMBREE_ISA_SSE2)
+   ADD_DEFINITIONS(-DEMBREE_TARGET_SSE2)
+@@ -413,6 +428,8 @@
+   ENDIF()
+ ENDIF ()
+ 
++ MESSAGE( "ISA_LOWEST: ${ISA_LOWEST}")
++
+ INCLUDE (ispc)
+ 
+ ##############################################################
+diff -NurB a/common/math/math.h embree-3.12.2/common/math/math.h
+--- a/common/math/math.h	2021-02-04 06:17:39.330035566 +0000
++++ embree-3.12.2/common/math/math.h	2021-02-04 14:46:08.518288755 +0000
+@@ -8,10 +8,14 @@
+ #include "constants.h"
+ #include <cmath>
+ 
++#if defined(__SSE__)||defined(__SSE2__)||defined(__SSE4_2__)||defined(__AVX__)||defined(__AVX2__)||defined(__AVX512VL__)||defined(__AVX512DQ__)||defined(__AVX512BW__)
++
+ #include <emmintrin.h>
+ #include <xmmintrin.h>
+ #include <immintrin.h>
+ 
++#endif
++
+ #if defined(__WIN32__)
+ #if defined(_MSC_VER) && (_MSC_VER <= 1700)
+ namespace std
+diff -NurB a/common/sys/intrinsics.h embree-3.12.2/common/sys/intrinsics.h
+--- a/common/sys/intrinsics.h	2021-02-04 06:17:39.338035728 +0000
++++ embree-3.12.2/common/sys/intrinsics.h	2021-02-04 14:36:09.962425348 +0000
+@@ -5,11 +5,15 @@
+ 
+ #include "platform.h"
+ 
+-#if defined(__WIN32__)
+-#include <intrin.h>
+-#endif
++#if defined(__SSE__)||defined(__SSE2__)||defined(__SSE4_2__)||defined(__AVX__)||defined(__AVX2__)||defined(__AVX512VL__)||defined(__AVX512DQ__)||defined(__AVX512BW__)
++
++#	if defined(__WIN32__)
++#		include <intrin.h>
++#	endif
+ 
+-#include <immintrin.h>
++#	include <immintrin.h>
++
++#endif
+ 
+ #if defined(__BMI__) && defined(__GNUC__) && !defined(__INTEL_COMPILER)
+   #if !defined(_tzcnt_u32)
+diff -NurB a/common/sys/sysinfo.h embree-3.12.2/common/sys/sysinfo.h
+--- a/common/sys/sysinfo.h	2021-02-04 06:17:39.338035728 +0000
++++ embree-3.12.2/common/sys/sysinfo.h	2021-02-04 10:00:37.421541449 +0000
+@@ -56,7 +56,10 @@
+ #  define ISA SSE
+ #  define ISA_STR "SSE"
+ #else 
+-#error Unknown ISA
++#  define isa none
++#  define ISA NONE
++#  define ISA_STR "NONE"
++//#error Unknown ISA
+ #endif
+ 
+ namespace embree
+diff -NurB a/kernels/CMakeLists.txt embree-3.12.2/kernels/CMakeLists.txt
+--- a/kernels/CMakeLists.txt	2021-02-04 06:17:39.366036296 +0000
++++ embree-3.12.2/kernels/CMakeLists.txt	2021-02-04 09:47:16.993383179 +0000
+@@ -111,8 +111,10 @@
+     geometry/curve_intersector_virtual_8i_mb.cpp
+     bvh/bvh_intersector1_bvh4.cpp)
+ 
+-  IF (${ISA} EQUAL ${ISA_LOWEST_AVX})
+-    LIST(APPEND ${TARGET} geometry/primitive8.cpp)
++  IF (${ISA_LOWEST_AVX})
++    IF (${ISA} EQUAL ${ISA_LOWEST_AVX})
++      LIST(APPEND ${TARGET} geometry/primitive8.cpp)
++    ENDIF()
+   ENDIF() 
+ 
+   IF (${ISA} EQUAL ${SSE2} OR ${ISA} EQUAL ${AVX} OR ${ISA} EQUAL ${AVX2} OR ${ISA} EQUAL ${AVX512} OR ${ISA_LOWEST} EQUAL ${ISA})
+@@ -189,7 +191,8 @@
+   
+ ENDMACRO()
+ 
+-#embree_files(EMBREE_LIBRARY_FILES_SSE2 ${SSE2})
++embree_files(EMBREE_LIBRARY_FILES_NONE ${NONE})
++embree_files(EMBREE_LIBRARY_FILES_SSE2 ${SSE2})
+ embree_files(EMBREE_LIBRARY_FILES_SSE42 ${SSE42})
+ embree_files(EMBREE_LIBRARY_FILES_AVX ${AVX})
+ embree_files(EMBREE_LIBRARY_FILES_AVX2 ${AVX2})
+@@ -217,7 +220,8 @@
+       DEPENDS ${src_file})
+   ENDFOREACH()
+ ENDMACRO()
+-#CreateISADummyFiles(EMBREE_LIBRARY_FILES_SSE2      sse2      ${EMBREE_LIBRARY_FILES_SSE2})
++CreateISADummyFiles(EMBREE_LIBRARY_FILES_NONE      none      ${EMBREE_LIBRARY_FILES_NONE})
++CreateISADummyFiles(EMBREE_LIBRARY_FILES_SSE2      sse2      ${EMBREE_LIBRARY_FILES_SSE2})
+ CreateISADummyFiles(EMBREE_LIBRARY_FILES_SSE42     sse42     ${EMBREE_LIBRARY_FILES_SSE42})
+ CreateISADummyFiles(EMBREE_LIBRARY_FILES_AVX       avx       ${EMBREE_LIBRARY_FILES_AVX})
+ CreateISADummyFiles(EMBREE_LIBRARY_FILES_AVX2      avx2      ${EMBREE_LIBRARY_FILES_AVX2})

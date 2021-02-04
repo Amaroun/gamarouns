@@ -20,10 +20,10 @@ fi
 LICENSE="Apache-2.0"
 SLOT="3"
 KEYWORDS="amd64"
-IUSE="+ispc tutorials +tbb
+IUSE="ispc tutorials +tbb
 	cpu_flags_x86_sse2 cpu_flags_x86_sse4_2 cpu_flags_x86_avx cpu_flags_x86_avx2
 	cpu_flags_x86_avx512f cpu_flags_x86_avx512cd
-	cpu_flags_x86_avx512er cpu_flags_x86_avx512pf
+#	cpu_flags_x86_avx512er cpu_flags_x86_avx512pf
 	cpu_flags_x86_avx512vl cpu_flags_x86_avx512dq cpu_flags_x86_avx512bw"
 
 RDEPEND="
@@ -43,7 +43,7 @@ src_configure() {
                 -DEMBREE_ISA_SSE42=$(usex cpu_flags_x86_sse4_2)
                 -DEMBREE_ISA_AVX=$(usex cpu_flags_x86_avx)
                 -DEMBREE_ISA_AVX2=$(usex cpu_flags_x86_avx2)
-                -DEMBREE_ISA_AVX512KNL=$(usex cpu_flags_x86_avx512f && usex cpu_flags_x86_avx512cd && usex cpu_flags_x86_avx512er && usex cpu_flags_x86_avx512pf)
+#                -DEMBREE_ISA_AVX512KNL=$(usex cpu_flags_x86_avx512f && usex cpu_flags_x86_avx512cd && usex cpu_flags_x86_avx512er && usex cpu_flags_x86_avx512pf)
                 -DEMBREE_ISA_AVX512SKX=$(usex cpu_flags_x86_avx512f && usex cpu_flags_x86_avx512cd && usex cpu_flags_x86_avx512vl && usex cpu_flags_x86_avx512dq && usex cpu_flags_x86_avx512bw)
         )
 	if use tbb ; then
