@@ -33,8 +33,13 @@ RDEPEND="
 	"
 DEPEND="${RDEPEND}"
 
-PATCHES+="${FILESDIR}/${PN}${SLOT}_vector_extensions.patch"
+PATCHES+="${FILESDIR}/${PN}${SLOT}_vector_extensions.patch
+	${FILESDIR}/${PN}${SLOT}_fakesimds.patch"
 
+src_prepare() {
+	cp "${FILESDIR}/fakesimd.h" "${WORKDIR}/${PN}-${PV}/common/sys"
+	default
+}
 src_configure() {
 	local mycmakeargs=(
 		-DEMBREE_ISPC_SUPPORT=$(usex ispc)
