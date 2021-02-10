@@ -1,0 +1,455 @@
+diff -NurB a/common/math/math.h embree-3.12.2/common/math/math.h
+--- a/common/math/math.h	2021-02-09 10:27:46.919130536 +0000
++++ embree-3.12.2/common/math/math.h	2021-02-09 10:29:54.681606043 +0000
+@@ -164,7 +164,7 @@
+ 
+   template<typename T>
+     __forceinline T twice(const T& a) { return a+a; }
+-
++/*
+   __forceinline      int min(int      a, int      b) { return a<b ? a:b; }
+   __forceinline unsigned min(unsigned a, unsigned b) { return a<b ? a:b; }
+   __forceinline  int64_t min(int64_t  a, int64_t  b) { return a<b ? a:b; }
+@@ -173,7 +173,8 @@
+ #if defined(__X86_64__)
+   __forceinline   size_t min(size_t   a, size_t   b) { return a<b ? a:b; }
+ #endif
+-
++*/
++	using std::min;
+   template<typename T> __forceinline T min(const T& a, const T& b, const T& c) { return min(min(a,b),c); }
+   template<typename T> __forceinline T min(const T& a, const T& b, const T& c, const T& d) { return min(min(a,b),min(c,d)); }
+   template<typename T> __forceinline T min(const T& a, const T& b, const T& c, const T& d, const T& e) { return min(min(min(a,b),min(c,d)),e); }
+@@ -182,6 +183,7 @@
+   template<typename T> __forceinline T mini(const T& a, const T& b, const T& c, const T& d) { return mini(mini(a,b),mini(c,d)); }
+   template<typename T> __forceinline T mini(const T& a, const T& b, const T& c, const T& d, const T& e) { return mini(mini(mini(a,b),mini(c,d)),e); }
+ 
++/*
+   __forceinline      int max(int      a, int      b) { return a<b ? b:a; }
+   __forceinline unsigned max(unsigned a, unsigned b) { return a<b ? b:a; }
+   __forceinline  int64_t max(int64_t  a, int64_t  b) { return a<b ? b:a; }
+@@ -190,7 +192,8 @@
+ #if defined(__X86_64__)
+   __forceinline   size_t max(size_t   a, size_t   b) { return a<b ? b:a; }
+ #endif
+-
++*/
++	using std::max;
+   template<typename T> __forceinline T max(const T& a, const T& b, const T& c) { return max(max(a,b),c); }
+   template<typename T> __forceinline T max(const T& a, const T& b, const T& c, const T& d) { return max(max(a,b),max(c,d)); }
+   template<typename T> __forceinline T max(const T& a, const T& b, const T& c, const T& d, const T& e) { return max(max(max(a,b),max(c,d)),e); }
+diff -NurB a/common/math/vec2.h embree-3.12.2/common/math/vec2.h
+--- a/common/math/vec2.h	2021-02-09 10:27:46.923130613 +0000
++++ embree-3.12.2/common/math/vec2.h	2021-02-09 14:41:38.858812505 +0000
+@@ -34,7 +34,8 @@
+     __forceinline          Vec2( const T& x, const T& y ) : x(x), y(y) {}
+ 
+     __forceinline Vec2( const Vec2& other ) { x = other.x; y = other.y; }
+-    __forceinline Vec2( const Vec2fa& other );
++    __forceinline Vec2( const Vec2fa& other ) { x = other.x; y = other.y; }
++//    __forceinline Vec2( const Vec2fa& other );
+ 
+     template<typename T1> __forceinline Vec2( const Vec2<T1>& a ) : x(T(a.x)), y(T(a.y)) {}
+     template<typename T1> __forceinline Vec2& operator =( const Vec2<T1>& other ) { x = other.x; y = other.y; return *this; }
+diff -NurB a/common/math/vec3.h embree-3.12.2/common/math/vec3.h
+--- a/common/math/vec3.h	2021-02-09 10:27:46.923130613 +0000
++++ embree-3.12.2/common/math/vec3.h	2021-02-09 14:14:34.030293411 +0000
+@@ -37,7 +37,8 @@
+     __forceinline          Vec3( const T& x, const T& y, const T& z ) : x(x), y(y), z(z) {}
+ 
+     __forceinline Vec3( const Vec3& other ) { x = other.x; y = other.y; z = other.z; }
+-    __forceinline Vec3( const Vec3fa& other );
++    __forceinline Vec3( const Vec3fa& other ) { x = other.x; y = other.y; z = other.z; }
++//    __forceinline Vec3( const Vec3fa& other );
+ 
+     template<typename T1> __forceinline Vec3( const Vec3<T1>& a ) : x(T(a.x)), y(T(a.y)), z(T(a.z)) {}
+     template<typename T1> __forceinline Vec3& operator =(const Vec3<T1>& other) { x = other.x; y = other.y; z = other.z; return *this; }
+diff -NurB a/common/math/vec4.h embree-3.12.2/common/math/vec4.h
+--- a/common/math/vec4.h	2021-02-09 10:27:46.923130613 +0000
++++ embree-3.12.2/common/math/vec4.h	2021-02-09 14:15:08.399001270 +0000
+@@ -34,7 +34,8 @@
+     __forceinline          Vec4( const Vec3<T>& xyz, const T& w ) : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
+ 
+     __forceinline Vec4( const Vec4& other ) { x = other.x; y = other.y; z = other.z; w = other.w; }
+-    __forceinline Vec4( const Vec3fx& other );
++    __forceinline Vec4( const Vec3fx& other ) { x = other.x; y = other.y; z = other.z; w = 0; }
++//    __forceinline Vec4( const Vec3fx& other );
+ 
+     template<typename T1> __forceinline Vec4( const Vec4<T1>& a ) : x(T(a.x)), y(T(a.y)), z(T(a.z)), w(T(a.w)) {}
+     template<typename T1> __forceinline Vec4& operator =(const Vec4<T1>& other) { x = other.x; y = other.y; z = other.z; w = other.w; return *this; }
+diff -NurB a/common/simd/simd.h embree-3.12.2/common/simd/simd.h
+--- a/common/simd/simd.h	2021-02-09 10:27:46.923130613 +0000
++++ embree-3.12.2/common/simd/simd.h	2021-02-09 10:59:12.922846971 +0000
+@@ -6,9 +6,9 @@
+ #include "../math/math.h"
+ 
+ /* include SSE wrapper classes */
+-#if defined(__SSE__)
++//#if defined(__SSE__)
+ #  include "sse.h"
+-#endif
++//#endif
+ 
+ /* include AVX wrapper classes */
+ #if defined(__AVX__)
+diff -NurB a/common/sys/array.h embree-3.12.2/common/sys/array.h
+--- a/common/sys/array.h	2021-02-09 10:27:46.927130691 +0000
++++ embree-3.12.2/common/sys/array.h	2021-02-10 11:05:19.674573918 +0000
+@@ -133,7 +133,10 @@
+     __forceinline operator       Ty* ()       { return data; }
+     __forceinline operator const Ty* () const { return data; }
+ 
+-    __forceinline       Ty& operator[](const int i)       { assert(i>=0 && i<N); return data[i]; }
++    template<typename IndexT> __forceinline       Ty& operator[](IndexT i)       { assert(i<N); return data[i]; }
++    template<typename IndexT> __forceinline const Ty& operator[](IndexT i) const { assert(i<N); return data[i]; }
++
++/*    __forceinline       Ty& operator[](const int i)       { assert(i>=0 && i<N); return data[i]; }
+     __forceinline const Ty& operator[](const int i) const { assert(i>=0 && i<N); return data[i]; }
+ 
+     __forceinline       Ty& operator[](const unsigned i)       { assert(i<N); return data[i]; }
+@@ -143,7 +146,7 @@
+     __forceinline       Ty& operator[](const size_t i)       { assert(i<N); return data[i]; }
+     __forceinline const Ty& operator[](const size_t i) const { assert(i<N); return data[i]; }
+ #endif
+-
++*/
+   private:
+     Ty arr[max_stack_bytes/sizeof(Ty)];
+     Ty* data;
+@@ -195,6 +198,8 @@
+ 
+     __forceinline       Ty& operator[](const int i)      { assert(i>=0 && i<max_total_elements); resize(i+1); return data[i]; }
+     __forceinline       Ty& operator[](const unsigned i) { assert(i<max_total_elements); resize(i+1); return data[i]; }
++    __forceinline       Ty& operator[](const long int i)      { assert(i>=0 && i<max_total_elements); resize(i+1); return data[i]; }
++    __forceinline       Ty& operator[](const long unsigned i) { assert(i<max_total_elements); resize(i+1); return data[i]; }
+ 
+ #if defined(__X86_64__)
+     __forceinline       Ty& operator[](const size_t i) { assert(i<max_total_elements); resize(i+1); return data[i]; }
+diff -NurB a/common/sys/fakesimd.h embree-3.12.2/common/sys/fakesimd.h
+--- a/common/sys/fakesimd.h	2021-02-09 10:27:46.931130769 +0000
++++ embree-3.12.2/common/sys/fakesimd.h	2021-02-09 12:50:01.605820580 +0000
+@@ -222,3 +222,8 @@
+ 
+ inline void* _mm_malloc(std::size_t size, std::size_t alig){return std::malloc(size);}
+ inline void _mm_free(void* p){std::free(p);}
++
++inline void _mm_mfence(){}
++
++inline std::uint32_t _mm_getcsr(){return 0;}
++inline void _mm_setcsr(std::uint32_t){}
+diff -NurB a/common/sys/intrinsics.h embree-3.12.2/common/sys/intrinsics.h
+--- a/common/sys/intrinsics.h	2021-02-09 10:27:46.931130769 +0000
++++ embree-3.12.2/common/sys/intrinsics.h	2021-02-10 12:16:21.165258230 +0000
+@@ -228,8 +228,8 @@
+ __forceinline void __cpuid(int out[4], int op){}
+   
+   __forceinline uint64_t read_tsc()  {
+-    uint32_t high,low;
+-    asm volatile ("rdtsc" : "=d"(high), "=a"(low));
++    uint32_t high = 0,low = 0;
++//    asm volatile ("rdtsc" : "=d"(high), "=a"(low));
+     return (((uint64_t)high) << 32) + (uint64_t)low;
+   }
+   
+@@ -237,7 +237,13 @@
+ #if defined(__AVX2__) 
+     return _tzcnt_u32(v);
+ #else
+-    int r = 0; asm ("bsf %1,%0" : "=r"(r) : "r"(v)); return r;
++	for(int i = 31; i >=0 ; --i)
++	{
++		if(v & 0x1) return i;
++		v >>= 1;
++	}
++	return 0;
++//    int r = 0; asm ("bsf %1,%0" : "=r"(r) : "r"(v)); return r;
+ #endif
+   }
+   
+@@ -247,7 +253,13 @@
+ #if defined(__AVX2__) 
+     return _tzcnt_u32(v);
+ #else
+-    unsigned r = 0; asm ("bsf %1,%0" : "=r"(r) : "r"(v)); return r;
++	for(int i = 31; i >=0 ; --i)
++	{
++		if(v & 0x1) return i;
++		v >>= 1;
++	}
++	return 0;
++//    unsigned r = 0; asm ("bsf %1,%0" : "=r"(r) : "r"(v)); return r;
+ #endif
+   }
+ #endif
+@@ -260,7 +272,14 @@
+     return _tzcnt_u32(v);
+ #endif
+ #else
+-    size_t r = 0; asm ("bsf %1,%0" : "=r"(r) : "r"(v)); return r;
++	for(int i = sizeof(size_t) - 1; i >=0 ; --i)
++	{
++		if(v & 0x1) return i;
++		v >>= 1;
++	}
++	return 0;
++
++//    size_t r = 0; asm ("bsf %1,%0" : "=r"(r) : "r"(v)); return r;
+ #endif
+   }
+ 
+@@ -291,19 +310,32 @@
+ #if defined(__AVX2__) 
+     return 31 - _lzcnt_u32(v);
+ #else
+-    int r = 0; asm ("bsr %1,%0" : "=r"(r) : "r"(v)); return r;
++	for(int i = 31; i >=0 ; --i)
++	{
++		if(v & 0x80000000) return i;
++		v <<= 1;
++	}
++	return 0;
++
++//    int r = 0; asm ("bsr %1,%0" : "=r"(r) : "r"(v)); return r;
+ #endif
+   }
+   
+-#if defined(__X86_64__)
++//#if defined(__X86_64__)
+   __forceinline unsigned bsr(unsigned v) {
+ #if defined(__AVX2__) 
+     return 31 - _lzcnt_u32(v);
+ #else
+-    unsigned r = 0; asm ("bsr %1,%0" : "=r"(r) : "r"(v)); return r;
++	for(int i = 31; i >=0 ; --i)
++	{
++		if(v & 0x80000000) return i;
++		v <<= 1;
++	}
++	return 0;
++//    unsigned r = 0; asm ("bsr %1,%0" : "=r"(r) : "r"(v)); return r;
+ #endif
+   }
+-#endif
++//#endif
+   
+   __forceinline size_t bsr(size_t v) {
+ #if defined(__AVX2__)
+@@ -313,7 +345,14 @@
+     return 31 - _lzcnt_u32(v);
+ #endif
+ #else
+-    size_t r = 0; asm ("bsr %1,%0" : "=r"(r) : "r"(v)); return r;
++	for(int i = sizeof(size_t) - 1; i >=0 ; --i)
++	{
++		if(v & 0x80000000) return i;
++		v <<= 1;
++	}
++	return 0;
++
++//    size_t r = 0; asm ("bsr %1,%0" : "=r"(r) : "r"(v)); return r;
+ #endif
+   }
+   
+@@ -342,7 +381,7 @@
+     return v & (v-1);
+ #endif
+   }
+-  
++  /*
+   __forceinline int btc(int v, int i) {
+     int r = 0; asm ("btc %1,%0" : "=r"(r) : "r"(i), "0"(v) : "flags" ); return r;
+   }
+@@ -354,11 +393,12 @@
+   __forceinline int btr(int v, int i) {
+     int r = 0; asm ("btr %1,%0" : "=r"(r) : "r"(i), "0"(v) : "flags"); return r;
+   }
+-  
++*/  
+   __forceinline size_t btc(size_t v, size_t i) {
+-    size_t r = 0; asm ("btc %1,%0" : "=r"(r) : "r"(i), "0"(v) : "flags" ); return r;
++//    size_t r = 0; asm ("btc %1,%0" : "=r"(r) : "r"(i), "0"(v) : "flags" ); return r;
++	return v ^ (static_cast<decltype(v)>(0x1) << (i % (8 * sizeof(v))));
+   }
+-  
++/*  
+   __forceinline size_t bts(size_t v, size_t i) {
+     size_t r = 0; asm ("bts %1,%0" : "=r"(r) : "r"(i), "0"(v) : "flags"); return r;
+   }
+@@ -366,7 +406,7 @@
+   __forceinline size_t btr(size_t v, size_t i) {
+     size_t r = 0; asm ("btr %1,%0" : "=r"(r) : "r"(i), "0"(v) : "flags"); return r;
+   }
+-
++*/
+   __forceinline int32_t atomic_cmpxchg(int32_t volatile* value, int32_t comparand, const int32_t input) {
+     return __sync_val_compare_and_swap(value, comparand, input);
+   }
+diff -NurB a/common/sys/sysinfo.h embree-3.12.2/common/sys/sysinfo.h
+--- a/common/sys/sysinfo.h	2021-02-09 10:27:46.931130769 +0000
++++ embree-3.12.2/common/sys/sysinfo.h	2021-02-09 11:09:31.650455003 +0000
+@@ -31,7 +31,8 @@
+ #  define isa avx
+ #  define ISA AVX
+ #  define ISA_STR "AVX"
+-#elif defined (__SSE4_2__)
++//#elif defined (__SSE4_2__)
++#else
+ #  define isa sse42
+ #  define ISA SSE42
+ #  define ISA_STR "SSE4.2"
+@@ -47,18 +48,18 @@
+ //#  define isa sse3
+ //#  define ISA SSE3
+ //#  define ISA_STR "SSE3"
+-#elif defined(__SSE2__) || defined(__SSE3__) || defined(__SSSE3__)
+-#  define isa sse2
+-#  define ISA SSE2
+-#  define ISA_STR "SSE2"
+-#elif defined(__SSE__)
+-#  define isa sse
+-#  define ISA SSE
+-#  define ISA_STR "SSE"
+-#else 
+-#  define isa none
+-#  define ISA NONE
+-#  define ISA_STR "NONE"
++//#elif defined(__SSE2__) || defined(__SSE3__) || defined(__SSSE3__)
++//#  define isa sse2
++//#  define ISA SSE2
++//#  define ISA_STR "SSE2"
++//#elif defined(__SSE__)
++//#  define isa sse
++//#  define ISA SSE
++//#  define ISA_STR "SSE"
++//#else 
++//#  define isa none
++//#  define ISA NONE
++//#  define ISA_STR "NONE"
+ //#error Unknown ISA
+ #endif
+ 
+diff -NurB a/common/sys/thread.cpp embree-3.12.2/common/sys/thread.cpp
+--- a/common/sys/thread.cpp	2021-02-09 10:27:46.931130769 +0000
++++ embree-3.12.2/common/sys/thread.cpp	2021-02-09 10:30:42.986537162 +0000
+@@ -317,7 +317,7 @@
+   
+   static void* threadStartup(ThreadStartupData* parg)
+   {
+-    _mm_setcsr(_mm_getcsr() | /*FTZ:*/ (1<<15) | /*DAZ:*/ (1<<6));
++//    _mm_setcsr(_mm_getcsr() | /*FTZ:*/ (1<<15) | /*DAZ:*/ (1<<6));
+     
+     /*! Mac OS X does not support setting affinity at thread creation time */
+ #if defined(__MACOSX__)
+diff -NurB a/kernels/common/accel.h embree-3.12.2/kernels/common/accel.h
+--- a/kernels/common/accel.h	2021-02-09 10:27:46.971131547 +0000
++++ embree-3.12.2/kernels/common/accel.h	2021-02-10 13:29:12.551692646 +0000
+@@ -332,12 +332,12 @@
+         intersectorN.intersect(this,rayN,N,context);
+       }
+       
+-#if defined(__SSE__)
++//#if defined(__SSE__)
+       __forceinline void intersect(const vbool4& valid, RayHitK<4>& ray, IntersectContext* context) {
+         const vint<4> mask = valid.mask32();
+         intersect4(&mask,(RTCRayHit4&)ray,context);
+       }
+-#endif
++//#endif
+ #if defined(__AVX__)
+       __forceinline void intersect(const vbool8& valid, RayHitK<8>& ray, IntersectContext* context) {
+         const vint<8> mask = valid.mask32();
+@@ -388,12 +388,12 @@
+         intersectorN.occluded(this,rayN,N,context);
+       }
+       
+-#if defined(__SSE__)
++//#if defined(__SSE__)
+       __forceinline void occluded(const vbool4& valid, RayK<4>& ray, IntersectContext* context) {
+         const vint<4> mask = valid.mask32();
+         occluded4(&mask,(RTCRay4&)ray,context);
+       }
+-#endif
++//#endif
+ #if defined(__AVX__)
+       __forceinline void occluded(const vbool8& valid, RayK<8>& ray, IntersectContext* context) {
+         const vint<8> mask = valid.mask32();
+diff -NurB a/kernels/common/alloc.h embree-3.12.2/kernels/common/alloc.h
+--- a/kernels/common/alloc.h	2021-02-09 10:27:46.971131547 +0000
++++ embree-3.12.2/kernels/common/alloc.h	2021-02-09 11:22:57.621569808 +0000
+@@ -818,7 +818,7 @@
+         bytes_in = bytes = min(bytes,reserveEnd-i);
+         
+ 	if (i+bytes > allocEnd) {
+-          if (device) device->memoryMonitor(i+bytes-max(i,allocEnd),true);
++          if (device) device->memoryMonitor(i+bytes-max(i,static_cast<decltype(allocEnd)::value_type>(allocEnd)),true);
+         }
+ 	return &data[i];
+       }
+@@ -829,12 +829,12 @@
+ 
+       void reset_block ()
+       {
+-        allocEnd = max(allocEnd,(size_t)cur);
++        allocEnd = max(static_cast<decltype(allocEnd)::value_type>(allocEnd),(size_t)cur);
+         cur = 0;
+       }
+ 
+       size_t getBlockUsedBytes() const {
+-        return min(size_t(cur),reserveEnd);
++        return min(size_t(cur),static_cast<decltype(reserveEnd)::value_type>(reserveEnd));
+       }
+ 
+       size_t getBlockFreeBytes() const {
+@@ -842,7 +842,7 @@
+       }
+ 
+       size_t getBlockAllocatedBytes() const {
+-        return min(max(allocEnd,size_t(cur)),reserveEnd);
++        return min(max(static_cast<decltype(allocEnd)::value_type>(allocEnd),size_t(cur)),static_cast<decltype(reserveEnd)::value_type>(reserveEnd));
+       }
+ 
+       size_t getBlockWastedBytes() const {
+diff -NurB a/kernels/common/device.cpp embree-3.12.2/kernels/common/device.cpp
+--- a/kernels/common/device.cpp	2021-02-09 10:27:46.971131547 +0000
++++ embree-3.12.2/kernels/common/device.cpp	2021-02-09 12:44:15.022681402 +0000
+@@ -100,14 +100,14 @@
+     /*! enable some floating point exceptions to catch bugs */
+     if (State::float_exceptions)
+     {
+-      int exceptions = _MM_MASK_MASK;
++//      int exceptions = _MM_MASK_MASK;
+       //exceptions &= ~_MM_MASK_INVALID;
+-      exceptions &= ~_MM_MASK_DENORM;
+-      exceptions &= ~_MM_MASK_DIV_ZERO;
++//      exceptions &= ~_MM_MASK_DENORM;
++//      exceptions &= ~_MM_MASK_DIV_ZERO;
+       //exceptions &= ~_MM_MASK_OVERFLOW;
+       //exceptions &= ~_MM_MASK_UNDERFLOW;
+       //exceptions &= ~_MM_MASK_INEXACT;
+-      _MM_SET_EXCEPTION_MASK(exceptions);
++//      _MM_SET_EXCEPTION_MASK(exceptions);
+     }
+     
+     /* print info header */
+@@ -199,8 +199,8 @@
+     std::cout << "   Threads  : " << getNumberOfLogicalThreads() << std::endl;
+     std::cout << "   ISA      : " << stringOfCPUFeatures(cpu_features) << std::endl;
+     std::cout << "   Targets  : " << supportedTargetList(cpu_features) << std::endl;
+-    const bool hasFTZ = _mm_getcsr() & _MM_FLUSH_ZERO_ON;
+-    const bool hasDAZ = _mm_getcsr() & _MM_DENORMALS_ZERO_ON;
++    const bool hasFTZ = false;//_mm_getcsr() & _MM_FLUSH_ZERO_ON;
++    const bool hasDAZ = false;//_mm_getcsr() & _MM_DENORMALS_ZERO_ON;
+     std::cout << "   MXCSR    : " << "FTZ=" << hasFTZ << ", DAZ=" << hasDAZ << std::endl;
+     std::cout << "  Config" << std::endl;
+     std::cout << "    Threads : " << (numThreads ? toString(numThreads) : std::string("default")) << std::endl;
+diff -NurB a/kernels/subdiv/bezier_curve.h embree-3.12.2/kernels/subdiv/bezier_curve.h
+--- a/kernels/subdiv/bezier_curve.h	2021-02-09 10:27:46.987131859 +0000
++++ embree-3.12.2/kernels/subdiv/bezier_curve.h	2021-02-09 14:17:55.078434207 +0000
+@@ -7,6 +7,7 @@
+ //#include "../common/scene_curves.h"
+ #include "../common/context.h"
+ 
++#include "../common/math/vec3fa.h"
+ namespace embree
+ {
+   class BezierBasis
