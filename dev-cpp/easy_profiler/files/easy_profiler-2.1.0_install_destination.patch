@@ -1,0 +1,35 @@
+diff -NurB a/easy_profiler_core/CMakeLists.txt easy_profiler-2.1.0/easy_profiler_core/CMakeLists.txt
+--- a/easy_profiler_core/CMakeLists.txt	2021-03-08 19:52:37.808185152 +0100
++++ easy_profiler-2.1.0/easy_profiler_core/CMakeLists.txt	2021-03-08 20:03:34.233158604 +0100
+@@ -265,7 +265,7 @@
+ 
+ #########################################################################################
+ # Installation:
+-set(config_install_dir "lib/cmake/${PROJECT_NAME}")
++set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}-${EASY_PRODUCT_VERSION_STRING}")
+ set(include_install_dir "include")
+ 
+ set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+@@ -305,20 +305,12 @@
+ )
+ 
+ install(
+-    FILES
+-    LICENSE.MIT
+-    LICENSE.APACHE
+-    DESTINATION
+-    .
+-)
+-
+-install(
+     TARGETS
+     easy_profiler
+     EXPORT
+     ${targets_export_name}
+-    LIBRARY DESTINATION lib COMPONENT Runtime
+-    ARCHIVE DESTINATION lib COMPONENT Development
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Runtime
++    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+     RUNTIME DESTINATION bin COMPONENT Runtime
+     BUNDLE DESTINATION bin COMPONENT Runtime
+     PUBLIC_HEADER DESTINATION include COMPONENT Development
