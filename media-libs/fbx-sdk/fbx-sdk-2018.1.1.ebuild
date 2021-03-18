@@ -2,16 +2,16 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="6"
+EAPI="7"
 
-inherit versionator multilib unpacker
+inherit multilib unpacker
 
 DESCRIPTION="Platform and API toolkit to transfer existing content into the FBX format."
 HOMEPAGE="https://www.autodesk.com/products/fbx/overview"
 
-VER_YEAR="$(get_version_component_range 1)"
-VER_MAJOR="$(get_version_component_range 2)"
-VER_MINOR="$(get_version_component_range 3)"
+VER_YEAR="$(ver_cut 1)"
+VER_MAJOR="$(ver_cut 2)"
+VER_MINOR="$(ver_cut 3)"
 
 PACKAGE_FILE_NAME="fbx${VER_YEAR}${VER_MAJOR}_${VER_MINOR}_fbxsdk_linux"
 

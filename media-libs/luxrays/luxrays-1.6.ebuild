@@ -2,9 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="6"
+EAPI="7"
 
-inherit cmake-utils flag-o-matic versionator
+inherit cmake-utils flag-o-matic
 
 DESCRIPTION="LuxCoreRender is a physically correct, unbiased rendering engine. It is built on physically based equations that model the transportation of light."
 HOMEPAGE="http://www.luxcorerender.net"

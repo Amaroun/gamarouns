@@ -1,10 +1,10 @@
-EAPI="6"
-inherit cmake-utils cmake-multilib versionator
+EAPI="7"
+inherit cmake-utils cmake-multilib
 
 DESCRIPTION="Portable Computing Language"
 HOMEPAGE="http://portablecl.org"
 
-PV_RC_SEPARATOR_FIXED=$(replace_version_separator '_' '-')
+PV_RC_SEPARATOR_FIXED=${PV//[_]/-}
 PV_FILE_FORMAT=${PV_RC_SEPARATOR_FIXED^^}
 SRC_URI="https://github.com/pocl/pocl/archive/v${PV_FILE_FORMAT}.tar.gz -> ${P}.tar.gz"
 S="${WORKDIR}/${PN}-${PV_FILE_FORMAT}"
