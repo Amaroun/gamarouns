@@ -1,0 +1,11 @@
+diff -NurB a/CMakeLists.txt anbox-9999/CMakeLists.txt
+--- a/CMakeLists.txt	2021-03-23 00:40:42.188105640 +0100
++++ anbox-9999/CMakeLists.txt	2021-03-23 00:41:14.889108158 +0100
+@@ -139,7 +139,6 @@
+ 
+ add_subdirectory(external)
+ add_subdirectory(src)
+-add_subdirectory(tests)
+ add_subdirectory(android)
+ 
+ if (NOT "${HOST_CMAKE_C_COMPILER}" STREQUAL "")

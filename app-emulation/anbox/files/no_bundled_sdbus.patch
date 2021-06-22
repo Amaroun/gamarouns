@@ -10,14 +10,13 @@ index 713df49..1e8b462 100644
  find_package(EGL REQUIRED)
  find_package(GLESv2 REQUIRED)
  find_package(Protobuf REQUIRED)
-diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index f677aa0..265a2eb 100644
---- a/external/CMakeLists.txt
-+++ b/external/CMakeLists.txt
-@@ -6,12 +6,3 @@ add_subdirectory(backward-cpp)
+diff -NurB a/external/CMakeLists.txt anbox-9999/external/CMakeLists.txt
+--- a/external/CMakeLists.txt	2021-03-23 00:20:05.619010426 +0100
++++ anbox-9999/external/CMakeLists.txt	2021-03-23 00:22:46.320022800 +0100
+@@ -6,12 +6,3 @@
  set(BUILD_TESTING OFF)
  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-error")
- add_subdirectory(cpu_features)
+ add_subdirectory(cpu_features EXCLUDE_FROM_ALL)
 -include(ExternalProject)
 -ExternalProject_Add(sdbus-cpp
 -  PREFIX sdbus-cpp

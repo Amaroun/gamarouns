@@ -43,7 +43,8 @@ DEPEND="
 	sys-apps/dbus
 	sys-fs/fuse:3
 	sys-libs/libcap
-	|| ( sys-apps/systemd sys-auth/elogind )
+	systemd? ( sys-apps/systemd )
+	!systemd? ( sys-auth/elogind )
 "
 RDEPEND="${DEPEND}"
 BDEPEND="virtual/pkgconfig"
@@ -60,7 +61,8 @@ CONFIG_CHECK="
 	~TMPFS_XATTR
 "
 
-PATCHES=( ""${FILESDIR}"/no_bundled_sdbus.patch" )
+PATCHES+=( "${FILESDIR}/no_bundled_sdbus.patch"
+	 "${FILESDIR}/anbox-no_tests.patch" )
 
 pkg_pretend() {
 	if use !systemd; then
@@ -72,7 +74,7 @@ pkg_pretend() {
 		check_extra_config
 	fi
 	# Check if ANDROID_BINDER_DEVICES has binder string specicied in it
-	linux_config_exists && grep -qE '(CONFIG_ANDROID_BINDER_DEVICES=*[^h][^w]binder)' "${KERNEL_DIR}"/.config || eerror "  CONFIG_ANDROID_BINDER_DEVICES does not contain string 'binder'"
+#	linux_config_exists && grep -qE '(CONFIG_ANDROID_BINDER_DEVICES=*[^h][^w]binder)' "${KERNEL_DIR}"/.config || eerror "  CONFIG_ANDROID_BINDER_DEVICES does not contain string 'binder'"
 }
 
 src_prepare() {
