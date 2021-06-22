@@ -16,7 +16,6 @@ if [[ "$PV" == "9999" ]] ; then
 
 	EGIT_REPO_URI="https://github.com/LuxCoreRender/LuxCore.git"
 	S="${WORKDIR}/${P}"
-	elog "Workdir: ${S}"
 else
 	DV=$(ver_rs 3 '')
 	SRC_URI="https://codeload.github.com/LuxCoreRender/LuxCore/tar.gz/${PN}_v${DV} -> ${P}.tar.gz"

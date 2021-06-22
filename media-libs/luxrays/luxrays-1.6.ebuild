@@ -16,7 +16,6 @@ if [[ "$PV" == "9999" ]] ; then
 else
 	SRC_URI="https://codeload.github.com/LuxCoreRender/LuxCore/tar.gz/luxrender_v${PV} -> ${P}.tar.gz"
 
-	einfo "$SRC_URI"
 fi
 
 
@@ -38,32 +37,36 @@ RDEPEND=">=dev-libs/boost-1.43:=
 DEPEND="${RDEPEND}"
 S="${WORKDIR}/LuxCore-luxrender_v${PV}"
 
+PATCHES+=(
+	"${FILESDIR}/${PN}-${SLOT}_cmake_python.patch"
+	"${FILESDIR}/${PN}-${SLOT}_cl2hpp.patch"
+	"${FILESDIR}/${P}_up_to_date_cpp.patch"
+	"${FILESDIR}/${P}_embree3.patch"
+	"${FILESDIR}/${P}_kernel_preprocess.patch"
+)
 src_prepare() {
 
-	rm "${S}/cmake/Packages/FindOpenCL.cmake"
-	rm "${S}/cmake/Packages/FindEmbree.cmake"
-	rm "${S}/cmake/Packages/FindGLEW.cmake"
-	rm "${S}/cmake/Packages/FindGLUT.cmake"
-	rm "${S}/cmake/Packages/FindOpenEXR.cmake"
+	CMAKE_REMOVE_MODULES=yes
+	CMAKE_REMOVE_MODULES_LIST="FindOpenCL FindEmbree FindGLEW FindGLUT FindOpenEXR FindOpenImageIO"
+
 	if use shared ; then
 		epatch "${FILESDIR}/${PN}-shared_libs.patch"
 	fi
-	epatch "${FILESDIR}/${PN}-${SLOT}_cmake_python.patch"
-	epatch "${FILESDIR}/${PN}-${SLOT}_cl2hpp.patch"
-	epatch "${FILESDIR}/${P}_up_to_date_cpp.patch"
-	epatch "${FILESDIR}/${P}_embree3.patch"
+
+
 	cmake-utils_src_prepare
+
+	$(grep -Rwle 'cl2.hpp' | xargs sed -i 's|cl2\.hpp|opencl\.hpp|g')
+
 }
 
 
 src_configure() {
 	append-flags -fPIC
-        use opencl || append-flags -DLUXRAYS_DISABLE_OPENCL
-	if use debug ; then
-		 append-flags -ggdb
-		CMAKE_BUILD_TYPE="Debug"
+        if use opencl ; then
+		append-cppflags -DCL_HPP_CL_1_2_DEFAULT_BUILD -DCL_HPP_TARGET_OPENCL_VERSION=120 -DCL_HPP_MINIMUM_OPENCL_VERSION=120
 	else
-		CMAKE_BUILD_TYPE="Release"
+		append-cppflags -DLUXRAYS_DISABLE_OPENCL
 	fi
 	BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
 	einfo "Boost python versions: $BoostPythons "

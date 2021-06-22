@@ -1,5 +1,5 @@
 EAPI="7"
-inherit cmake-utils cmake-multilib
+inherit cmake-utils cmake-multilib llvm
 
 DESCRIPTION="Portable Computing Language"
 HOMEPAGE="http://portablecl.org"
@@ -14,12 +14,15 @@ SLOT="0"
 KEYWORDS="amd64"
 IUSE=""
 
-RDEPEND=">=sys-devel/llvm-3.9
-         sys-devel/clang
-         sys-apps/hwloc
-         "
+RDEPEND=">=sys-devel/clang-6
+	<sys-devel/clang-11
+	sys-devel/clang
+	sys-apps/hwloc
+"
 
 DEPEND="${RDEPEND}"
+
+LLVM_MAX_SLOT="10"
 
 PATCHES=("${FILESDIR}/vendor_opencl_libs_location.epatch"
 )

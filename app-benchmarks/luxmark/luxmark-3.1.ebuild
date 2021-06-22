@@ -82,7 +82,7 @@ src_configure() {
 
 src_install() {
 
-	dobin "${BUILD_DIR}/bin/luxmark"
+	newbin "${BUILD_DIR}/bin/${PN}" "${PN}-${SLOT}"
 	dodoc AUTHORS.txt
 	newicon "${FILESDIR}/${PN}.svg" "${PN}-${SLOT}.svg"
 

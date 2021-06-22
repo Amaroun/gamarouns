@@ -1,0 +1,17 @@
+diff -NurB c/cmake/KernelPreprocess.cmake d/cmake/KernelPreprocess.cmake
+--- c/cmake/KernelPreprocess.cmake	2021-06-21 15:47:19.938881627 +0200
++++ d/cmake/KernelPreprocess.cmake	2021-06-21 15:47:31.155882444 +0200
+@@ -58,10 +58,10 @@
+ 		add_custom_command(
+ 			OUTPUT ${DST}
+ 			COMMAND echo \"\#include <string>\" > ${DST}
+-			COMMAND echo namespace ${NAMESPACE} \"{ namespace ocl {\" >> ${DST}
++			COMMAND echo \" namespace ${NAMESPACE} { namespace ocl {\" >> ${DST}
+ 			COMMAND echo "std::string KernelSource_${KERNEL} = " >> ${DST}
+-			COMMAND cat ${SRC} | sed 's/\r//g' | sed 's/\\\\/\\\\\\\\/g' | sed 's/\"/\\\\\"/g' | awk '{ printf \(\"\\"%s\\\\n\\"\\n\", $$0\) }' >> ${DST}
+-			COMMAND echo "\; } }" >> ${DST}
++			COMMAND cat ${SRC} | sed 's/\\r//g' | sed 's/\\\\/\\\\\\\\/g' | sed 's/\"/\\\\\"/g' | awk '{ printf \(\"\\"%s\\\\n\\"\\n\", $$0\) }' >> ${DST}
++			COMMAND echo \"\; } }\" >> ${DST}
+ 			MAIN_DEPENDENCY ${SRC}
+ 		)
+ 	ENDIF(WIN32)

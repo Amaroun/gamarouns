@@ -15,7 +15,7 @@ KEYWORDS="~amd64"
 IUSE=""
 
 RDEPEND=">=sys-devel/llvm-3.9
-		<sys-devel/llvm-12
+		<sys-devel/llvm-13
 		sys-devel/clang
 		sys-apps/hwloc
          "
