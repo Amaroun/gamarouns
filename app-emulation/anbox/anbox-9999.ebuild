@@ -34,6 +34,7 @@ DEPEND="
 	dev-cpp/sdbus-cpp
 	dev-cpp/gtest
 	dev-libs/boost[threads]
+	dev-libs/cpu_features
 	dev-libs/expat
 	dev-libs/protobuf
 	media-libs/libsdl2
