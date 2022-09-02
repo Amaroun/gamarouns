@@ -4,7 +4,7 @@
 
 EAPI="7"
 
-inherit cmake-utils flag-o-matic
+inherit cmake flag-o-matic
 
 DESCRIPTION="LuxCoreRender is a physically correct, unbiased rendering engine. It is built on physically based equations that model the transportation of light."
 HOMEPAGE="http://www.luxcorerender.net"
@@ -44,17 +44,17 @@ PATCHES+=(
 	"${FILESDIR}/${P}_embree3.patch"
 	"${FILESDIR}/${P}_kernel_preprocess.patch"
 )
+
 src_prepare() {
 
 	CMAKE_REMOVE_MODULES=yes
 	CMAKE_REMOVE_MODULES_LIST="FindOpenCL FindEmbree FindGLEW FindGLUT FindOpenEXR FindOpenImageIO"
 
 	if use shared ; then
-		epatch "${FILESDIR}/${PN}-shared_libs.patch"
+		PATCHES+=( "${FILESDIR}/${PN}-shared_libs.patch" )
 	fi
 
-
-	cmake-utils_src_prepare
+	cmake_src_prepare
 
 	$(grep -Rwle 'cl2.hpp' | xargs sed -i 's|cl2\.hpp|opencl\.hpp|g')
 
@@ -64,7 +64,7 @@ src_prepare() {
 src_configure() {
 	append-flags -fPIC
         if use opencl ; then
-		append-cppflags -DCL_HPP_CL_1_2_DEFAULT_BUILD -DCL_HPP_TARGET_OPENCL_VERSION=120 -DCL_HPP_MINIMUM_OPENCL_VERSION=120
+		append-cppflags -DCL_HPP_CL_2_2_DEFAULT_BUILD -DCL_HPP_TARGET_OPENCL_VERSION=220 -DCL_HPP_MINIMUM_OPENCL_VERSION=220
 	else
 		append-cppflags -DLUXRAYS_DISABLE_OPENCL
 	fi
@@ -72,13 +72,13 @@ src_configure() {
 	einfo "Boost python versions: $BoostPythons "
 	mycmakeargs=( -DPythonVersions="${BoostPythons}")
 	use opencl || mycmakeargs=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev -DPythonVersions="${BoostPythons}")
-	cmake-utils_src_configure
+	cmakesrc_configure
 }
 
 src_compile() {
-	cmake-utils_src_make luxcore
-	cmake-utils_src_make smallluxgpu
-	cmake-utils_src_make luxrays
+	cmake_src_make luxcore
+	cmake_src_make smallluxgpu
+	cmake_src_make luxrays
 }
 
 src_install() {

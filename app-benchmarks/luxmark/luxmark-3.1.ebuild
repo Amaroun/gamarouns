@@ -4,7 +4,7 @@
 
 EAPI="7"
 
-inherit cmake-utils flag-o-matic desktop
+inherit cmake flag-o-matic desktop
 
 DESCRIPTION="A GPL OpenCL Benchmark."
 HOMEPAGE="http://www.luxmark.info"
@@ -49,13 +49,14 @@ src_prepare() {
 
 	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
 
+	PATCHES+=( "${FILESDIR}/${PN}-${PV}_link_stuff.patch" )
+
 	if use debug ; then
-		PATCHES+=( "${FILESDIR}/${PN}-shared-luxrays.patch" )
+		PATCHES+=( "${FILESDIR}/${P}_luxrays-shared.patch" )
 	else
 		PATCHES+=( "${FILESDIR}/${PN}-${SLOT}_luxrays_static.patch" )
 	fi
-	PATCHES+=( "${FILESDIR}/${PN}-${PV}_link_stuff.patch" )
-	cmake-utils_src_prepare
+	cmake_src_prepare
 
 }
 
@@ -65,19 +66,20 @@ src_configure() {
 
         if use debug ; then
 		append-flags -ggdb
-		CMAKE_BUILD_TYPE="Debug"
-        else
-		CMAKE_BUILD_TYPE="Release"
         fi
 
 	local mycmakeargs=""
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
+        BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
+        einfo "Boost python versions: $BoostPythons "
+        mycmakeargs=( -DPythonVersions="${BoostPythons}")
+
 	! use opencl && mycmakeargs=("${mycmakeargs}
 		  -DLUXRAYS_DISABLE_OPENCL=ON")
 
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_install() {

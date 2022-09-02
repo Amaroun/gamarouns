@@ -1,0 +1,12 @@
+diff -Nurb a/CMakeLists.txt properties-cpp-9999/CMakeLists.txt
+--- a/CMakeLists.txt	2021-07-18 20:04:10.999002129 +0200
++++ properties-cpp-9999/CMakeLists.txt	2021-07-18 20:01:36.475000735 +0200
+@@ -40,7 +40,7 @@
+ add_subdirectory(doc)
+ add_subdirectory(data)
+ add_subdirectory(include)
+-add_subdirectory(tests)
++#add_subdirectory(tests)
+ 
+ # enable_coverage_report(posix_process_test linux_process_test)
+ 

@@ -2,14 +2,14 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="7"
+EAPI=7
 
 DESCRIPTION="This C++ project provides a portable binary archive to be used with boost::serialization."
-HOMEPAGE="https://archive.codeplex.com/?p=epa"
+HOMEPAGE="https://github.com/CudaWrangler/cuew"
 
 #PATCHES="${FILESDIR}/bcd_system_deps.patch"
 
-inherit cmake-utils
+inherit cmake
 
 if [[ "$PV" == "9999" ]] ; then
 	inherit git-r3

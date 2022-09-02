@@ -2,12 +2,12 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="7"
+EAPI=7
 
 DESCRIPTION="The OpenCL Extension Wrangler Library"
 HOMEPAGE="https://github.com/martijnberger/clew"
 
-inherit cmake-utils
+inherit cmake
 
 if [[ "$PV" == "9999" ]] ; then
 	inherit git-r3
@@ -28,7 +28,7 @@ PATCHES+=(
 
 
 src_install() {
-	cmake-utils_src_install
+	cmake_src_install
 	insinto usr/share/${PN}/cmake
 	newins ${FILESDIR}/Findclew.cmake ${PN}-config.cmake
 }

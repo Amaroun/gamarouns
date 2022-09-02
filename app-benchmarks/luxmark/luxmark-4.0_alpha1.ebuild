@@ -2,9 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="7"
+EAPI=7
 
-inherit cmake-utils flag-o-matic desktop
+inherit cmake flag-o-matic desktop
 
 DESCRIPTION="A GPL OpenCL Benchmark."
 HOMEPAGE="http://www.luxmark.info"
@@ -64,7 +64,7 @@ src_prepare() {
 #	fi
 	rm "${S}/cmake/Packages/FindOpenCL.cmake"
 	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
-	cmake-utils_src_prepare
+	cmake_src_prepare
 
 }
 
@@ -89,7 +89,7 @@ src_configure() {
 	! use opencl && mycmakeargs+=("${mycmakeargs}
 		  -DLUXRAYS_DISABLE_OPENCL=ON")
 	mycmakeargs+=("-DPYTHON_V=36")
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 src_install() {

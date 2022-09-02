@@ -1,7 +1,7 @@
 diff -NurB a/cmake/Dependencies.cmake LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake
 --- a/cmake/Dependencies.cmake	2020-08-31 13:11:18.649777535 +0200
 +++ LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake	2020-08-31 13:11:34.800776882 +0200
-@@ -130,6 +127,48 @@
+@@ -128,6 +127,48 @@
  	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
  endif ()
  
@@ -72,7 +72,21 @@ diff -NurB a/CMakeLists.txt LuxCore-luxcorerender_v2.4/CMakeLists.txt
  	set_property(
  			CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${supported_build_variants})
  
-@@ -127,6 +127,16 @@
+@@ -96,13 +99,6 @@
+ SET(LuxRays_INCLUDE_DIR "${LuxRays_SOURCE_DIR}/include")
+ include_directories("${LuxRays_INCLUDE_DIR}")
+ 
+-include_directories("${LuxRays_SOURCE_DIR}/deps/json-3.7.3/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/cuew/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/clew/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/optix-7.1.0/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/spdlog-1.8.0/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/robin-hood-hashing-3.9.1/src/include")
+-
+ # Find dependencies
+ include(Dependencies)
+
+@@ -134,6 +127,16 @@
  	MESSAGE(FATAL_ERROR "--> Could not locate required C-BLOSC files - Please check ${BLOSC_SEARCH_PATH}")
  endif()
  
@@ -89,25 +103,25 @@ diff -NurB a/CMakeLists.txt LuxCore-luxcorerender_v2.4/CMakeLists.txt
  ################################################################################
  #
  # Build options
-@@ -154,7 +164,7 @@
+@@ -169,7 +164,7 @@
  	set(LUXCORE_LIBRARY luxcore)
  	ADD_DEFINITIONS("-DLUXCORE_DLL")
  else()
--	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays  ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
+-	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays opencolorio  ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
  endif()
  
  ################################################################################
 diff -NurB a/samples/luxcoreconsole/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoreconsole/CMakeLists.txt
 --- a/samples/luxcoreconsole/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
 +++ LuxCore-luxcorerender_v2.4/samples/luxcoreconsole/CMakeLists.txt	2020-08-31 23:56:38.304845858 +0200
-@@ -28,4 +28,4 @@
- 
- add_executable(luxcoreconsole ${LUXCORECONSOLE_SRCS})
- 
+@@ -31,5 +31,5 @@
+ if(APPLE)
+ TARGET_LINK_LIBRARIES(luxcoreconsole expat "-framework Carbon" "-framework IOKit" ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
+ else()
 -TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
-\ No newline at end of file
 +TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${clew_LIBRARIES} ${Python_LIBRARIES})
+ endif()
 diff -NurB a/samples/luxcoredemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoredemo/CMakeLists.txt
 --- a/samples/luxcoredemo/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
 +++ LuxCore-luxcorerender_v2.4/samples/luxcoredemo/CMakeLists.txt	2020-08-31 20:09:22.292676077 +0200
@@ -127,25 +141,69 @@ diff -NurB a/samples/luxcorescenedemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/
 -TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
 +TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${clew_LIBRARY})
 diff -NurB a/samples/luxcoreui/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoreui/CMakeLists.txt
---- a/samples/luxcoreui/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
-+++ LuxCore-luxcorerender_v2.4/samples/luxcoreui/CMakeLists.txt	2020-09-01 00:00:36.439836227 +0200
-@@ -89,4 +89,6 @@
+--- a/samples/luxcoreui/CMakeLists.txt	2022-08-19 23:39:01.753121314 +0200
++++ LuxCore-luxcorerender_v2.6/samples/luxcoreui/CMakeLists.txt	2022-08-20 00:13:52.094163786 +0200
+@@ -18,16 +18,6 @@
+ 
+ #############################################################################
+ #
+-# GLFW library
+-#
+-#############################################################################
+-
+-add_subdirectory(deps/glfw-3.1.1)
+-include_directories(deps/glfw-3.1.1/include)
+-include_directories(deps/nfd/include)
+-
+-#############################################################################
+-#
+ # luxcore UI binary
+ #
+ #############################################################################
+@@ -62,33 +52,15 @@
+ 	imgui_impl_glfw.cpp
+ 	bake.cpp
+ 	resources/luxlogo_bg.cpp
+-	deps/imgui-1.46/imgui.cpp
+-	deps/imgui-1.46/imgui_demo.cpp
+-	deps/imgui-1.46/imgui_draw.cpp
+-	deps/nfd/nfd_common.c
+ 	)
+ 
+-IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+-	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_win.cpp)
+-ENDIF()
+-
+-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+-	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_gtk.c)
+-	add_definitions(${GTK3_CFLAGS_OTHER})
+-ENDIF()
+-
+-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+-	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_cocoa.m)
+-ENDIF()
+-
+ add_executable(luxcoreui ${LUXCOREUI_SRCS})
+ 
+ if(APPLE)
+ 
+ TARGET_LINK_LIBRARIES(luxcoreui
+ 	glfw
+-	expat
+-	${GLFW_LIBRARIES}
++	expat::expat
  	${LUXCORE_LIBRARY}
  	${OPENGL_LIBRARIES}
  	${GTK3_LIBRARIES}
--	${Boost_LIBRARIES})
-+	${Python_LIBRARIES}
-+	${Boost_LIBRARIES}
-+	${clew_LIBRARIES})
 diff -NurB a/src/luxcore/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxcore/CMakeLists.txt
 --- a/src/luxcore/CMakeLists.txt	2020-08-31 13:11:18.676777534 +0200
 +++ LuxCore-luxcorerender_v2.4/src/luxcore/CMakeLists.txt	2020-08-31 23:44:03.454876387 +0200
-@@ -150,13 +150,11 @@
+@@ -152,13 +152,11 @@
  
  if (BUILD_LUXCORE_DLL)
  	add_library(luxcore SHARED ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
--	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
+-	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
  else()
  	add_library(luxcore STATIC ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
  endif()
@@ -155,26 +213,27 @@ diff -NurB a/src/luxcore/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxcore/C
  add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
  link_directories (${SLG_LIB_DIR} ${LuxRays_LIB_DIR})
  
-@@ -173,14 +171,13 @@
+@@ -175,15 +173,13 @@
  
  add_library(pyluxcore MODULE ${PYLUXCORE_SRCS} ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
  
 -include_directories(${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/include)
  
  add_definitions(-DOPENVDB_STATICLIB ${VISIBILITY_FLAGS})
  if(APPLE)
- 	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+ 	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio expat ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
      SET_TARGET_PROPERTIES(pyluxcore PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible
  else()
--	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+-	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY}  OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
  endif()
  
  set_target_properties(pyluxcore PROPERTIES PREFIX "")
 diff -NurB a/src/luxrays/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxrays/CMakeLists.txt
 --- a/src/luxrays/CMakeLists.txt	2020-08-31 13:11:18.677777534 +0200
 +++ LuxCore-luxcorerender_v2.4/src/luxrays/CMakeLists.txt	2020-08-31 13:11:34.870776879 +0200
-@@ -203,8 +203,6 @@
+@@ -208,8 +203,6 @@
  	${LuxRays_SOURCE_DIR}/src/luxrays/utils/thread.cpp
  	${LuxRays_SOURCE_DIR}/src/luxrays/utils/ply/rply.cpp
  	${LuxRays_SOURCE_DIR}/src/luxrays/utils/properties.cpp
@@ -186,11 +245,10 @@ diff -NurB a/src/luxrays/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxrays/C
 diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeLists.txt
 --- a/src/slg/CMakeLists.txt	2020-08-31 13:11:18.678777534 +0200
 +++ LuxCore-luxcorerender_v2.4/src/slg/CMakeLists.txt	2020-08-31 13:11:34.869776879 +0200
-@@ -77,138 +77,6 @@
- link_directories (${LuxRays_LIB_DIR})
+@@ -78,362 +78,13 @@
  
  add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
--
+ 
 -###########################################################################
 -#
 -# BCD files
@@ -214,10 +272,10 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include/bcd/core)
 -include_directories(${LuxRays_SOURCE_DIR}/deps/eigen-3.3.4)
 -include_directories(${LuxRays_SOURCE_DIR}/deps/lut)
--
--# Use only MPL licensed source code
--add_definitions("-DEIGEN_MPL2_ONLY")
--
+ 
+ # Use only MPL licensed source code
+ add_definitions("-DEIGEN_MPL2_ONLY")
+ 
 -add_library(bcd STATIC ${BCD_SRCS})
 -
 -###########################################################################
@@ -231,7 +289,7 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/Metadata.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/MetaMap.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/Platform.cc
--	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/openvdb.cc	
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/openvdb.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Archive.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Compression.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/DelayedLoadMetadata.cc
@@ -239,7 +297,7 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/GridDescriptor.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Queue.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/Stream.cc
--	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/TempFile.cc	
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/io/TempFile.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/Maps.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/Proximity.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/math/QuantizedUnitVec.cc
@@ -249,7 +307,7 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/AttributeGroup.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/AttributeSet.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/points.cc
--	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/StreamCompression.cc	
+-	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/points/StreamCompression.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/util/Formats.cc
 -	${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0/openvdb/util/Util.cc
 -)
@@ -317,21 +375,260 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -
 -include_directories(${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0)
 -
--# Required by VisualStudio to have M_PI defined
--add_definitions("-D_USE_MATH_DEFINES")
--
+ # Required by VisualStudio to have M_PI defined
+ add_definitions("-D_USE_MATH_DEFINES")
+ 
 -add_library(opensubdiv STATIC ${OPENSUBDIV_SRCS})
 -
- ###########################################################################
- #
- # Kernel files
+-###########################################################################
+-#
+-# OpenColorIO files
+-#
+-###########################################################################
+-
+-set(OPENCOLORIO_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/apphelpers/CategoryHelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/apphelpers/ColorSpaceHelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/apphelpers/DisplayViewHelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/apphelpers/LegacyViewingPipeline.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/apphelpers/MixingHelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Baker.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/BitDepthUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Caching.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ColorSpace.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ColorSpaceSet.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Config.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Context.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ContextVariableUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/CPUProcessor.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Display.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/DynamicProperty.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Exception.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/cdl/CDLParser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/cdl/CDLReaderHelper.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/cdl/CDLWriter.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/ctf/CTFReaderHelper.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/ctf/CTFReaderUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/ctf/CTFTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/ctf/IndexMapping.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormat3DL.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatCCC.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatCC.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatCDL.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatCSP.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatCTF.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatDiscreet1DL.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatHDL.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatICC.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatIridasCube.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatIridasItx.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatIridasLook.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatPandora.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatResolveCube.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatSpi1D.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatSpi3D.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatSpiMtx.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatTruelight.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FileFormatVF.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/FormatMetadata.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/xmlutils/XMLReaderHelper.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/xmlutils/XMLReaderUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/fileformats/xmlutils/XMLWriterUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/FileRules.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/GPUProcessor.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/GpuShader.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/GpuShaderDesc.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/GpuShaderUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/HashUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ImageDesc.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ImagePacking.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Logging.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Look.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/LookParse.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/MathUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/md5/md5.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/NamedTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/OCIOYaml.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Op.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/OpOptimizers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/allocation/AllocationOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/cdl/CDLOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/cdl/CDLOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/cdl/CDLOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/cdl/CDLOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/exponent/ExponentOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/exposurecontrast/ExposureContrastOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/exposurecontrast/ExposureContrastOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/exposurecontrast/ExposureContrastOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/exposurecontrast/ExposureContrastOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/fixedfunction/FixedFunctionOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/fixedfunction/FixedFunctionOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/fixedfunction/FixedFunctionOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/fixedfunction/FixedFunctionOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gamma/GammaOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gamma/GammaOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gamma/GammaOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gamma/GammaOpUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gamma/GammaOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingprimary/GradingPrimary.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingprimary/GradingPrimaryOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingprimary/GradingPrimaryOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingprimary/GradingPrimaryOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingprimary/GradingPrimaryOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingrgbcurve/GradingBSplineCurve.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingrgbcurve/GradingRGBCurveOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingrgbcurve/GradingRGBCurveOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingrgbcurve/GradingRGBCurveOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingrgbcurve/GradingRGBCurveOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingrgbcurve/GradingRGBCurve.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingtone/GradingTone.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingtone/GradingToneOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingtone/GradingToneOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingtone/GradingToneOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/gradingtone/GradingToneOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/log/LogOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/log/LogOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/log/LogOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/log/LogOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/log/LogUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut1d/Lut1DOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut1d/Lut1DOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut1d/Lut1DOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut1d/Lut1DOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut3d/Lut3DOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut3d/Lut3DOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut3d/Lut3DOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/lut3d/Lut3DOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/matrix/MatrixOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/matrix/MatrixOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/matrix/MatrixOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/matrix/MatrixOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/noop/NoOps.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/OpTools.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/range/RangeOpCPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/range/RangeOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/range/RangeOpGPU.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/range/RangeOp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ops/reference/ReferenceOpData.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ParseUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/PathUtils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Platform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Processor.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ScanlineHelper.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/Transform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/AllocationTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/ACES.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/BuiltinTransformRegistry.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/ColorMatrixHelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/OpHelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/BuiltinTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/CDLTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/ColorSpaceTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/DisplayViewTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/ExponentTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/ExponentWithLinearTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/ExposureContrastTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/FileTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/FixedFunctionTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/GradingPrimaryTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/GradingRGBCurveTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/GradingToneTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/GroupTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/LogAffineTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/LogCameraTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/LogTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/LookTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/Lut1DTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/Lut3DTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/MatrixTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/RangeTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/ArriCameras.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/CanonCameras.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/Displays.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/PanasonicCameras.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/RedCameras.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/transforms/builtins/SonyCameras.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ViewingRules.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/ViewTransform.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO/SystemMonitor.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/apputils/argparse.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/apputils/strutil.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/libutils/oiiohelpers/oiiohelpers.cpp
+-	${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/pystring/pystring.cpp
+-)
+-
+-set(YAMLCPP_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/binary.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/directives.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/emitfromevents.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/emitterstate.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/exceptions.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/memory.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/node.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/nodeevents.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/ostream_wrapper.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/parser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/scanner.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/scantag.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/simplekey.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/stream.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/convert.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/emit.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/emitter.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/emitterutils.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/exp.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/nodebuilder.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/node_data.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/null.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/parse.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/regex_yaml.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/scanscalar.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/scantoken.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/singledocparser.cpp
+-	${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/src/tag.cpp
+-)
+-
+-set(EXPAT_SRCS
+-	${LuxRays_SOURCE_DIR}/deps/expat-2.3.0/src/xmlparse.c
+-	${LuxRays_SOURCE_DIR}/deps/expat-2.3.0/src/xmlrole.c
+-	${LuxRays_SOURCE_DIR}/deps/expat-2.3.0/src/xmltok.c
+-	${LuxRays_SOURCE_DIR}/deps/expat-2.3.0/src/xmltok_impl.c
+-	${LuxRays_SOURCE_DIR}/deps/expat-2.3.0/src/xmltok_ns.c
+-)
+-
+-SOURCE_GROUP("Source Files\\OpenColorIO Library" FILES ${OPENCOLORIO_SRCS} ${YAMLCPP_SRCS} ${EXPAT_SRCS})
+-
+-include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/include)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/src/OpenColorIO)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/yaml-cpp-0.6.3/include)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/expat-2.3.0/src)
+-
+ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+ 	add_definitions("-DHAVE_GETRANDOM")
+ 	add_definitions("-DUSE_SSE")
+@@ -450,8 +101,6 @@
+ 	add_definitions("-DUSE_SSE")
+ endif(WIN32)
+ 
+-add_library(opencolorio STATIC ${OPENCOLORIO_SRCS} ${YAMLCPP_SRCS} ${EXPAT_SRCS})
+-
+ if(WIN32)
+ 	# OCIO 2.0.0 is the only module not supporting -D_UNICODE
+ 	target_compile_definitions(opencolorio PRIVATE "-D_MBCS")
 diff -NurB a/tests/luxcoreimplserializationdemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/tests/luxcoreimplserializationdemo/CMakeLists.txt
 --- a/tests/luxcoreimplserializationdemo/CMakeLists.txt	2020-09-01 00:49:39.377717204 +0200
 +++ LuxCore-luxcorerender_v2.4/tests/luxcoreimplserializationdemo/CMakeLists.txt	2020-09-01 00:52:40.928709862 +0200
-@@ -30,4 +30,4 @@
+@@ -26,9 +26,6 @@
+ 	luxcoreimplserializationdemo.cpp
+ 	)
  
+-include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
+-include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/include)
+-
  add_executable(luxcoreimplserializationdemo ${LUXCOREIMPL_SERIALIZATIONDEMO_SRCS})
  
--TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+-TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
 \ No newline at end of file
-+TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays ${Python_LIBRARIES} ${clew_LIBRARIES} ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
++TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES}  OpenColorIO::OpenColorIO  ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})

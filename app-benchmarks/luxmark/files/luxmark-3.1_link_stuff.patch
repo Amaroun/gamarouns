@@ -1,6 +1,6 @@
-diff -NurB a/cmake/Dependencies.cmake LuxMark-luxmark_v3.1/cmake/Dependencies.cmake
---- a/cmake/Dependencies.cmake	2021-01-29 13:51:49.894557862 +0100
-+++ LuxMark-luxmark_v3.1/cmake/Dependencies.cmake	2021-01-29 22:18:48.871390411 +0100
+diff -NurB a/cmake/Dependencies.cmake b/cmake/Dependencies.cmake
+--- a/cmake/Dependencies.cmake	2021-06-23 16:48:33.019976401 +0200
++++ b/cmake/Dependencies.cmake	2021-06-23 16:50:17.790984033 +0200
 @@ -108,7 +108,7 @@
  
  # Intel Embree
@@ -8,12 +8,12 @@ diff -NurB a/cmake/Dependencies.cmake LuxMark-luxmark_v3.1/cmake/Dependencies.cm
 -find_package(Embree)
 +find_package(Embree 3)
  
- if (Embree_FOUND)
- 	include_directories(SYSTEM ${Embree_INCLUDE_PATH})
+ if (EMBREE_FOUND)
+ 	include_directories(SYSTEM ${EMBREE_INCLUDE_PATH})
 @@ -165,6 +165,8 @@
- 	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu-1.a PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
- 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxrays/luxcore/luxcore.h PATHS ../luxrays/include ${LuxRays_HOME}/include)
- 	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore-1.a PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+ 	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+ 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
+ 	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
 +	SET(LUXCORE_INCLUDE_DIRS "${LUXCORE_INCLUDE_DIRS}/luxrays")
 +	SET(SLG_INCLUDE_DIRS "${SLG_INCLUDE_DIRS}/luxrays")
  ENDIF(APPLE)

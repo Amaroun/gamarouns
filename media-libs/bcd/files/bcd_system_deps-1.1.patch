@@ -1,0 +1,158 @@
+diff -NurB a/CMakeLists.txt c/CMakeLists.txt
+--- a/CMakeLists.txt	2022-08-07 13:08:03.941689079 +0200
++++ c/CMakeLists.txt	2022-08-08 17:22:30.442395869 +0200
+@@ -25,45 +25,23 @@
+ ENDIF(NOT CMAKE_BUILD_TYPE)
+ 
+ 
+-
+-
+-
+-
+-
+ # OpenMP
+-FIND_PACKAGE(OpenMP)
+-
+-#IF(${CMAKE_VERSION} VERSION_GREATER 3.8)
+-#
+-#	# not tested yet
+-#	MESSAGE(AUTHOR_WARNING "Using OpenMP detection from cmake 3.9.0+: not tested yet")
+-#	IF(OPENMP_CXX_FOUND)
+-#		ADD_LIBRARY(OpenMP ALIAS OpenMP::OpenMP_CXX)
+-#	ELSE()
+-#		MESSAGE(WARNING "Could not find OpenMP library")
+-#	ENDIF()
+-#
+-#ELSE()
+-
+-	IF(OPENMP_FOUND)
+-		ADD_LIBRARY(OpenMP INTERFACE)
+-		TARGET_COMPILE_OPTIONS(OpenMP INTERFACE ${OpenMP_CXX_FLAGS})
+-		TARGET_LINK_LIBRARIES(OpenMP INTERFACE
+-				$<$<CXX_COMPILER_ID:GNU>:${OpenMP_CXX_FLAGS}>
+-				$<$<CXX_COMPILER_ID:Clang>:${OpenMP_CXX_FLAGS}>
+-				$<$<CXX_COMPILER_ID:Intel>:${OpenMP_CXX_FLAGS}>
+-				)
+-	ELSE()
+-		MESSAGE(WARNING "Could not find OpenMP library")
+-	ENDIF()
+-
+-#ENDIF()
+-
+-
+-
++FIND_PACKAGE(OpenMP REQUIRED)
++    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
++    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
++    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
++
++# Eigen
++find_package(Eigen3 REQUIRED)
+ 
++#OpenEXr
++find_package(OpenEXR REQUIRED)
+ 
++#Imath
++find_package(Imath REQUIRED)
+ 
++# nlohmann_json
++find_package(nlohmann_json REQUIRED)
+ 
+ IF(BCD_USE_CUDA)
+ 
+@@ -112,7 +90,7 @@
+ 
+ 
+ #MESSAGE(STATUS "Entering subdirectory 'ext'")
+-ADD_SUBDIRECTORY(ext)
++#ADD_SUBDIRECTORY(ext)
+ 
+ #MESSAGE(STATUS "Entering subdirectory 'src'")
+ ADD_SUBDIRECTORY(src)
+diff -NurB a/src/core/CMakeLists.txt c/src/core/CMakeLists.txt
+--- a/src/core/CMakeLists.txt	2022-08-07 13:08:03.941689079 +0200
++++ c/src/core/CMakeLists.txt	2022-08-08 17:22:30.442395869 +0200
+@@ -97,9 +96,9 @@
+ TARGET_INCLUDE_DIRECTORIES(${target_name} PUBLIC ${bcd_core_include_folder})
+ 
+ SET_TARGET_PROPERTIES(${target_name} PROPERTIES CXX_STANDARD 11)
+-TARGET_LINK_LIBRARIES(${target_name} PUBLIC OpenMP)
+-TARGET_LINK_LIBRARIES(${target_name} PRIVATE eigen)
++TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${OpenMP_CXX_LIBRARIES})
++TARGET_LINK_LIBRARIES(${target_name} PUBLIC OpenEXR::OpenEXR)
++target_link_libraries(${target_name} PUBLIC Eigen3::Eigen)
++TARGET_LINK_LIBRARIES(${target_name} PUBLIC nlohmann_json::nlohmann_json)
+ 
+ INSTALL(TARGETS ${target_name} ARCHIVE DESTINATION lib)
+-
+-
+diff -NurB a/src/core/SamplesAccumulator.cpp c/src/core/SamplesAccumulator.cpp
+--- a/src/core/SamplesAccumulator.cpp	2022-08-07 13:08:03.941689079 +0200
++++ c/src/core/SamplesAccumulator.cpp	2022-08-08 17:22:30.442395869 +0200
+@@ -6,6 +6,8 @@
+ // All rights reserved. Use of this source code is governed by a
+ // BSD-style license that can be found in the LICENSE.txt file.
+ 
++#include <cmath>
++
+ #include "SamplesAccumulator.h"
+ #include "CovarianceMatrix.h"
+ 
+diff -NurB a/src/core/SpikeRemovalFilter.cpp c/src/core/SpikeRemovalFilter.cpp
+--- a/src/core/SpikeRemovalFilter.cpp	2022-08-07 13:08:03.941689079 +0200
++++ c/src/core/SpikeRemovalFilter.cpp	2022-08-08 17:22:30.442395869 +0200
+@@ -6,6 +6,8 @@
+ // All rights reserved. Use of this source code is governed by a
+ // BSD-style license that can be found in the LICENSE.txt file.
+ 
++#include <cmath>
++
+ #include "SpikeRemovalFilter.h"
+ 
+ #include "DeepImage.h"
+diff -NurB a/src/io/CMakeLists.txt c/src/io/CMakeLists.txt
+--- a/src/io/CMakeLists.txt	2022-08-07 13:08:03.941689079 +0200
++++ c/src/io/CMakeLists.txt	2022-08-08 17:22:30.442395869 +0200
+@@ -72,8 +72,8 @@
+ 
+ SET_TARGET_PROPERTIES(${target_name} PROPERTIES CXX_STANDARD 11)
+ TARGET_LINK_LIBRARIES(${target_name} PUBLIC ${lib_bcd_core})
+-TARGET_LINK_LIBRARIES(${target_name} PRIVATE OpenExr)
+-TARGET_LINK_LIBRARIES(${target_name} PRIVATE Json)
++TARGET_LINK_LIBRARIES(${target_name} PRIVATE OpenEXR::OpenEXR)
++TARGET_LINK_LIBRARIES(${target_name} PRIVATE nlohmann_json::nlohmann_json)
+ 
+ INSTALL(TARGETS ${target_name} ARCHIVE DESTINATION lib)
+ 
+diff -NurB a/src/io/exr/io_exr.cpp c/src/io/exr/io_exr.cpp
+--- a/src/io/exr/io_exr.cpp	2022-08-07 13:08:03.941689079 +0200
++++ c/src/io/exr/io_exr.cpp	2022-08-08 17:22:30.442395869 +0200
+@@ -24,11 +24,11 @@
+ 
+ /*VERSION 02.08.13*/
+ 
+-#include <ImfInputFile.h>
+-#include <ImfOutputFile.h>
+-#include <ImfRgbaFile.h>
+-#include <ImfChannelList.h>
+-#include <ImfFrameBuffer.h>
++#include <OpenEXR/ImfInputFile.h>
++#include <OpenEXR/ImfOutputFile.h>
++#include <OpenEXR/ImfRgbaFile.h>
++#include <OpenEXR/ImfChannelList.h>
++#include <OpenEXR/ImfFrameBuffer.h>
+ #include <half.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+diff -NurB a/src/io/ParametersIO.cpp c/src/io/ParametersIO.cpp
+--- a/src/io/ParametersIO.cpp	2022-08-07 13:08:03.941689079 +0200
++++ c/src/io/ParametersIO.cpp	2022-08-08 17:22:30.442395869 +0200
+@@ -10,7 +10,7 @@
+ 
+ #include "Utils.h"
+ 
+-#include <json.hpp>
++#include <nlohmann/json.hpp>
+ #include <iostream>
+ #include <fstream>
+ 

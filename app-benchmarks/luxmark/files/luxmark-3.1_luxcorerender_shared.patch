@@ -23,6 +23,6 @@ diff -NurB b/cmake/Dependencies.cmake d/cmake/Dependencies.cmake
  	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include ${LuxRays_HOME}/include)
 -	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
 +	FIND_LIBRARY(LUXCORE_LIBRARY luxcore.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+ 	SET(LUXCORE_INCLUDE_DIRS "${LUXCORE_INCLUDE_DIRS}/luxrays")
+ 	SET(SLG_INCLUDE_DIRS "${SLG_INCLUDE_DIRS}/luxrays")
  ENDIF(APPLE)
- 
- IF (SLG_INCLUDE_DIRS AND SLG_LIBRARY_CORE AND SLG_LIBRARY_FILM AND SLG_LIBRARY_KERNELS)

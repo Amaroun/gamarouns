@@ -2,14 +2,14 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=6
+EAPI=7
 
 PYTHON_COMPAT=( python2_7 )
 
 inherit scons-utils eutils
 
 DESCRIPTION="A joystick testing and configuration tool for Linux"
-HOMEPAGE="http://http://pingus.seul.org/~grumbel/jstest-gtk/"
+HOMEPAGE="https://jstest-gtk.gitlab.io/"
 
 LICENSE="GPLv3"
 SLOT="0"

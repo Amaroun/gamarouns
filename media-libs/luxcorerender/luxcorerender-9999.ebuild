@@ -2,9 +2,9 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="7"
+EAPI=7
 
-inherit cmake-utils flag-o-matic
+inherit cmake flag-o-matic
 
 DESCRIPTION="LuxCoreRender is a physically correct, unbiased rendering engine. It is built on physically based equations that model the transportation of light."
 HOMEPAGE="http://www.luxcorerender.net"
@@ -13,18 +13,20 @@ HOMEPAGE="http://www.luxcorerender.net"
 
 if [[ "$PV" == "9999" ]] ; then
 	inherit git-r3
+	KEYWORDS=""
 
 	EGIT_REPO_URI="https://github.com/LuxCoreRender/LuxCore.git"
-	S="${WORKDIR}/${P}"
-else
-	DV=$(ver_rs 3 '')
-	SRC_URI="https://codeload.github.com/LuxCoreRender/LuxCore/tar.gz/${PN}_v${DV} -> ${P}.tar.gz"
 	S="${WORKDIR}/LuxCore-${PN}_v${PV}"
+else
+	KEYWORDS="~amd64 ~x86"
+	DV=${PV//_alpha/alpha}
+	DV=${DV//_beta/beta}
+	SRC_URI="https://codeload.github.com/LuxCoreRender/LuxCore/tar.gz/${PN}_v${DV} -> ${P}.tar.gz"
+	S="${WORKDIR}/LuxCore-${PN}_v${DV}"
 fi
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
 IUSE="debug opencl cuda shared"
 
 REQUIRED_USE="debug? ( shared )"
@@ -59,14 +61,13 @@ src_prepare() {
 	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
 	cp "${FILESDIR}/FindOpenSubdiv.cmake" "${S}/cmake"
 
-	sed "${S}/CMakeLists.txt" -ie '/\/include_directories("${LuxRays_SOURCE_DIR}\/deps/d'
 #	if use shared ; then
 #		PATCHES+=(
 #			"${FILESDIR}/${PN}_build_shared.patch"
 #		)
 #	fi
 
-	cmake-utils_src_prepare
+	cmake_src_prepare
 
 }
 src_configure() {
@@ -81,7 +82,7 @@ src_configure() {
 	use opencl || mycmakeargs+=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev )
 	use cuda || mycmakeargs+=( -DLUXRAYS_DISABLE_CUDA=ON)
 	use shared && mycmakeargs+=( -DBUILD_LUXCORE_DLL=ON )
-	cmake-utils_src_configure
+	cmake_src_configure
 }
 
 

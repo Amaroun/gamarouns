@@ -2,15 +2,15 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=6
+EAPI=7
 
 PYTHON_COMPAT=( python2_7 )
 
-inherit cmake-utils
+inherit cmake
 CMAKE_BUILD_TYPE="Release"
 
 DESCRIPTION="A joystick testing and configuration tool for Linux"
-HOMEPAGE="http://http://pingus.seul.org/~grumbel/jstest-gtk/"
+HOMEPAGE="https://jstest-gtk.gitlab.io/"
 
 LICENSE="GPLv3"
 SLOT="0"
@@ -21,7 +21,7 @@ if [[ "${PV}" == "9999" ]]; then
 	KEYWORDS=""
 else
 	KEYWORDS="~amd64"
-	SRC_URI="http://pingus.seul.org/~grumbel/jstest-gtk/${P}.tar.bz2"
+	SRC_URI="https://github.com/Grumbel/$(PN)/archive/refs/tags/v($PV).tar.gz -> ${P}.tar.bz2"
 fi
 
 RDEPEND="dev-libs/libsigc++
@@ -31,10 +31,7 @@ DEPEND="${RDEPEND}
 
 src_prepare() {
 	epatch "${FILESDIR}/find_data_dir.patch"
-	default
-}
-src_configure() {
-	cmake-utils_src_configure
+	cmake_src_prepare
 }
 src_install() {
 	dobin "${CMAKE_BUILD_DIR}"/${PN}

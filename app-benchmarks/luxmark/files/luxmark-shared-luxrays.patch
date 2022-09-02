@@ -6,7 +6,7 @@ diff -NurB b/cmake/Dependencies.cmake c/cmake/Dependencies.cmake
  ELSE(APPLE)
  	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include ${LuxRays_HOME}/include )
 -	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-+	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays-1.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
  ENDIF(APPLE)
  
  IF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
@@ -15,14 +15,14 @@ diff -NurB b/cmake/Dependencies.cmake c/cmake/Dependencies.cmake
  ELSE(APPLE)
  	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ../luxrays/include)
 -	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-+	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_LIBRARY(SLG_LIBRARY libsmallluxgpu-1.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
  	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
 -	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-+	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore-1.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
  
  	IF (NOT SLG_LIBRARY)
 -		FIND_LIBRARY(SLG_LIBRARY slg-core PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-+		FIND_LIBRARY(SLG_LIBRARY libslg-core.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++		FIND_LIBRARY(SLG_LIBRARY libslg-core-1.so PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
  	ENDIF (NOT SLG_LIBRARY)
  ENDIF(APPLE)
  
