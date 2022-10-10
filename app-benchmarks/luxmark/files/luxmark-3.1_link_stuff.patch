@@ -9,8 +9,8 @@
  	MESSAGE(FATAL_ERROR "--> Could not locate required OpenImageIO files - Please check ${OPENIMAGEIO_SEARCH_PATH}")
  endif()
  
---- a/cmake/Dependencies.cmake	2022-10-09 23:28:46.909690912 +0200
-+++ LuxMark-luxmark_v3.1/cmake/Dependencies.cmake	2022-10-09 23:41:50.317663018 +0200
+--- a/cmake/Dependencies.cmake	2022-10-10 12:08:39.649596851 +0200
++++ LuxMark-luxmark_v3.1/cmake/Dependencies.cmake	2022-10-10 12:12:54.949587761 +0200
 @@ -108,7 +108,7 @@
  
  # Intel Embree
@@ -20,31 +20,41 @@
  
  if (EMBREE_FOUND)
  	include_directories(SYSTEM ${EMBREE_INCLUDE_PATH})
-@@ -136,8 +136,8 @@
+@@ -136,11 +136,12 @@
  	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
  	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
  ELSE(APPLE)
 -	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include ${LuxRays_HOME}/include )
 -	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-+	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays//luxrays/include ${LuxRays_HOME}/include )
-+	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays-luxrays PATHS ../lib ${LuxRays_HOME}/lib)
++	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays/luxrays.h)
++	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays-luxrays )
  ENDIF(APPLE)
  
  IF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
-@@ -162,9 +162,11 @@
++	SET(LUXRAYS_INCLUDE_DIRS "${LUXRAYS_INCLUDE_DIRS}/luxrays")
+ 	MESSAGE(STATUS "LuxRays include directory: " ${LUXRAYS_INCLUDE_DIRS})
+ 	MESSAGE(STATUS "LuxRays library directory: " ${LUXRAYS_LIBRARY})
+ 	INCLUDE_DIRECTORIES(SYSTEM ${LUXRAYS_INCLUDE_DIRS})
+@@ -161,13 +162,15 @@
+ 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
  	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
  ELSE(APPLE)
- 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ../luxrays/include)
+-	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ../luxrays/include)
 -	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
-+	FIND_LIBRARY(SLG_LIBRARY luxrays-smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib)
- 	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
+-	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
 -	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_PATH(SLG_INCLUDE_DIRS NAMES luxrays/slg/slg.h)
++	FIND_LIBRARY(SLG_LIBRARY luxrays-smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib)
++	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxrays/luxcore/luxcore.h)
 +	FIND_LIBRARY(LUXCORE_LIBRARY luxrays-luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib)
-+	SET(LUXCORE_INCLUDE_DIRS "${LUXCORE_INCLUDE_DIRS}/luxrays")
-+	SET(SLG_INCLUDE_DIRS "${SLG_INCLUDE_DIRS}/luxrays")
  ENDIF(APPLE)
  
  IF (SLG_INCLUDE_DIRS AND SLG_LIBRARY)
++	SET(LUXCORE_INCLUDE_DIRS "${LUXCORE_INCLUDE_DIRS}/luxrays")
++	SET(SLG_INCLUDE_DIRS "${SLG_INCLUDE_DIRS}/luxrays")
+ 	MESSAGE(STATUS "SLG include directory: " ${SLG_INCLUDE_DIRS})
+ 	MESSAGE(STATUS "SLG library directory: " ${SLG_LIBRARY})
+ 	INCLUDE_DIRECTORIES(SYSTEM ${SLG_INCLUDE_DIRS})
 --- a/src/CMakeLists.txt	2022-10-10 00:42:57.571532444 +0200
 +++ LuxMark-luxmark_v3.1/src/CMakeLists.txt	2022-10-10 00:43:26.316531420 +0200
 @@ -139,8 +139,15 @@
