@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="7"
+EAPI="8"
 
 inherit cmake flag-o-matic
 
@@ -26,7 +26,7 @@ IUSE="debug opencl shared"
 
 REQUIRED_USE="debug? ( shared )"
 
-RDEPEND=">=dev-libs/boost-1.43:=
+RDEPEND="dev-libs/boost:=
 	media-libs/openimageio
 	media-libs/embree
 	virtual/opengl
@@ -43,13 +43,14 @@ PATCHES+=(
 	"${FILESDIR}/${P}_up_to_date_cpp.patch"
 	"${FILESDIR}/${P}_embree3.patch"
 	"${FILESDIR}/${P}_kernel_preprocess.patch"
+	"${FILESDIR}/${P}_Imath.patch"
+	"${FILESDIR}/${P}_system_deps_link.patch"
+	"${FILESDIR}/${P}_boost_python_bindings.patch"
 )
 
 src_prepare() {
 
-	CMAKE_REMOVE_MODULES=yes
-	CMAKE_REMOVE_MODULES_LIST="FindOpenCL FindEmbree FindGLEW FindGLUT FindOpenEXR FindOpenImageIO"
-
+	rm -r "${S}/cmake/Packages"
 	if use shared ; then
 		PATCHES+=( "${FILESDIR}/${PN}-shared_libs.patch" )
 	fi
@@ -57,7 +58,6 @@ src_prepare() {
 	cmake_src_prepare
 
 	$(grep -Rwle 'cl2.hpp' | xargs sed -i 's|cl2\.hpp|opencl\.hpp|g')
-
 }
 
 
@@ -72,14 +72,15 @@ src_configure() {
 	einfo "Boost python versions: $BoostPythons "
 	mycmakeargs=( -DPythonVersions="${BoostPythons}")
 	use opencl || mycmakeargs=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev -DPythonVersions="${BoostPythons}")
-	cmakesrc_configure
+	cmake_src_configure
 }
 
-src_compile() {
-	cmake_src_make luxcore
-	cmake_src_make smallluxgpu
-	cmake_src_make luxrays
-}
+#src_compile() {
+#	CMAKE_USE_DIR="${S}/luxcore"
+#	cmake_src_compile
+#	cmake_build smallluxgpu
+#	cmake_build luxrays
+#}
 
 src_install() {
 	dodoc AUTHORS.txt
@@ -89,13 +90,13 @@ src_install() {
 	doins -r include/slg
 	doins -r include/luxrays
 	if use shared ; then
-		newlib.so ${BUILD_DIR}/lib/libluxcore.so libluxcore-${SLOT}.so
-		newlib.so ${BUILD_DIR}/lib/libsmallluxgpu.so libsmallluxgpu-${SLOT}.so
-		newlib.so ${BUILD_DIR}/lib/libluxrays.so libluxrays-${SLOT}.so
+		newlib.so ${BUILD_DIR}/lib/libluxcore.so lib${PN}-lluxcore.so
+		newlib.so ${BUILD_DIR}/lib/libsmallluxgpu.so lib${PN}-smallluxgpu.so
+		newlib.so ${BUILD_DIR}/lib/libluxrays.so lib${PN}-luxrays.so
 	else
-		newlib.a ${BUILD_DIR}/lib/libluxcore.a libluxcore-${SLOT}.a
-		newlib.a ${BUILD_DIR}/lib/libsmallluxgpu.a libsmallluxgpu-${SLOT}.a
-		newlib.a ${BUILD_DIR}/lib/libluxrays.a libluxrays-${SLOT}.a
+		newlib.a ${BUILD_DIR}/lib/libluxcore.a lib${PN}-luxcore.a
+		newlib.a ${BUILD_DIR}/lib/libsmallluxgpu.a lib${PN}-smallluxgpu.a
+		newlib.a ${BUILD_DIR}/lib/libluxrays.a lib${PN}-luxrays.a
 	fi
 }
 

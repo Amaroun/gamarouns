@@ -1,0 +1,14 @@
+diff -NurB a/src/luxcore/pyluxcore.cpp LuxCore-luxrender_v1.6/src/luxcore/pyluxcore.cpp
+--- a/src/luxcore/pyluxcore.cpp	2022-10-03 01:24:46.764396246 +0200
++++ LuxCore-luxrender_v1.6/src/luxcore/pyluxcore.cpp	2022-10-03 01:28:01.582389310 +0200
+@@ -1068,8 +1068,8 @@
+ 	// Scene class
+ 	//--------------------------------------------------------------------------
+ 
+-    class_<Scene>("Scene", init<optional<float> >())
+-		.def(init<string, optional<float> >())
++    class_<Scene>("Scene", init<boost::python::optional<float> >())
++		.def(init<string, boost::python::optional<float> >())
+ 		.def("ToProperties", &Scene::ToProperties, return_internal_reference<>())
+ 		.def("GetCamera", &Scene::GetCamera, return_internal_reference<>())
+ 		.def("GetLightCount", &Scene::GetLightCount)

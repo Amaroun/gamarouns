@@ -113,7 +113,7 @@ diff -Nurb LuxCore-luxrender_v1.6/cmake/Dependencies.cmake c/cmake/Dependencies.
  
 -if (OPENCL_FOUND)
 -	include_directories(BEFORE SYSTEM ${OPENCL_INCLUDE_DIR} ${OPENCL_C_INCLUDE_DIR})
-+if (Opencl_FOUND)
++if (OpenCL_FOUND)
 +	include_directories(BEFORE SYSTEM ${OpenCL_INCLUDE_DIR} ${OpenCL_C_INCLUDE_DIR})
  endif ()
  
@@ -135,9 +135,9 @@ diff -Nurb LuxCore-luxrender_v1.6/cmake/Dependencies.cmake c/cmake/Dependencies.
  	ENDIF (NOT FLEX_FOUND)
  ENDIF (NOT FLEX_NOT_AVAILABLE)
 +
-diff -Nurb LuxCore-luxrender_v1.6/CMakeLists.txt c/CMakeLists.txt
---- LuxCore-luxrender_v1.6/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/CMakeLists.txt	2020-11-12 19:52:42.778166106 +0100
+diff -NurB a/CMakeLists.txt LuxCore-luxrender_v1.6/CMakeLists.txt
+--- a/CMakeLists.txt	2022-10-03 01:00:18.986448507 +0200
++++ LuxCore-luxrender_v1.6/CMakeLists.txt	2022-10-03 01:02:38.052443556 +0200
 @@ -25,8 +25,8 @@
  #
  ################################################################################
@@ -161,7 +161,12 @@ diff -Nurb LuxCore-luxrender_v1.6/CMakeLists.txt c/CMakeLists.txt
  
  message(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
  
-@@ -81,14 +81,14 @@
+@@ -77,18 +77,18 @@
+ 	MESSAGE(FATAL_ERROR "--> Could not locate required Boost files - Please check ${BOOST_SEARCH_PATH}")
+ endif()
+ 
+-if (NOT OPENIMAGEIO_FOUND)
++if (NOT OpenImageIO_FOUND)
  	MESSAGE(FATAL_ERROR "--> Could not locate required OpenImageIO files - Please check ${OPENIMAGEIO_SEARCH_PATH}")
  endif()
  

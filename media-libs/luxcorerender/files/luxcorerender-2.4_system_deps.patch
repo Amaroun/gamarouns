@@ -1,7 +1,7 @@
 diff -NurB a/cmake/Dependencies.cmake LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake
 --- a/cmake/Dependencies.cmake	2020-08-31 13:11:18.649777535 +0200
 +++ LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake	2020-08-31 13:11:34.800776882 +0200
-@@ -128,6 +127,48 @@
+@@ -128,6 +127,56 @@
  	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
  endif ()
  
@@ -11,6 +11,14 @@ diff -NurB a/cmake/Dependencies.cmake LuxCore-luxcorerender_v2.4/cmake/Dependenc
 +
 +if (OpenVDB_FOUND)
 +	include_directories(BEFORE SYSTEM ${OpenVDB_INCLUDE_PATH})
++endif ()
++
++# OpenColorIo
++set(OpenColorIO_ROOT                   "${OpenColorIO_SEARCH_PATH}")
++find_package(OpenColorIO REQUIRED)
++
++if (OpenColorIO_FOUND)
++	include_directories(BEFORE SYSTEM ${OpenColorIO_INCLUDE_PATH})
 +endif ()
 +
 +# cuew

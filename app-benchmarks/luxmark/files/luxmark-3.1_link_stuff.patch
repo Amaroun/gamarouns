@@ -1,6 +1,16 @@
-diff -NurB a/cmake/Dependencies.cmake b/cmake/Dependencies.cmake
---- a/cmake/Dependencies.cmake	2021-06-23 16:48:33.019976401 +0200
-+++ b/cmake/Dependencies.cmake	2021-06-23 16:50:17.790984033 +0200
+--- a/CMakeLists.txt	2022-10-09 23:28:46.908690912 +0200
++++ LuxMark-luxmark_v3.1/CMakeLists.txt	2022-10-10 00:21:26.853578400 +0200
+@@ -127,7 +127,7 @@
+ 	MESSAGE(FATAL_ERROR "--> Could not locate required Boost files - Please check ${BOOST_SEARCH_PATH}")
+ endif()
+ 
+-if (NOT OPENIMAGEIO_FOUND)
++if (NOT OpenImageIO_FOUND)
+ 	MESSAGE(FATAL_ERROR "--> Could not locate required OpenImageIO files - Please check ${OPENIMAGEIO_SEARCH_PATH}")
+ endif()
+ 
+--- a/cmake/Dependencies.cmake	2022-10-09 23:28:46.909690912 +0200
++++ LuxMark-luxmark_v3.1/cmake/Dependencies.cmake	2022-10-09 23:41:50.317663018 +0200
 @@ -108,7 +108,7 @@
  
  # Intel Embree
@@ -10,26 +20,48 @@ diff -NurB a/cmake/Dependencies.cmake b/cmake/Dependencies.cmake
  
  if (EMBREE_FOUND)
  	include_directories(SYSTEM ${EMBREE_INCLUDE_PATH})
-@@ -165,6 +165,8 @@
- 	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+@@ -136,8 +136,8 @@
+ 	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ${OSX_DEPENDENCY_ROOT}/include/LuxRays)
+ 	FIND_LIBRARY(LUXRAYS_LIBRARY libluxrays.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
+ ELSE(APPLE)
+-	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays/include ${LuxRays_HOME}/include )
+-	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_PATH(LUXRAYS_INCLUDE_DIRS NAMES luxrays/luxrays.h PATHS ../luxrays//luxrays/include ${LuxRays_HOME}/include )
++	FIND_LIBRARY(LUXRAYS_LIBRARY luxrays-luxrays PATHS ../lib ${LuxRays_HOME}/lib)
+ ENDIF(APPLE)
+ 
+ IF (LUXRAYS_INCLUDE_DIRS AND LUXRAYS_LIBRARY)
+@@ -162,9 +162,11 @@
+ 	FIND_LIBRARY(LUXCORE_LIBRARY libluxcore.a ${OSX_DEPENDENCY_ROOT}/lib/LuxRays)
+ ELSE(APPLE)
+ 	FIND_PATH(SLG_INCLUDE_DIRS NAMES slg/slg.h PATHS ../luxrays/include)
+-	FIND_LIBRARY(SLG_LIBRARY smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_LIBRARY(SLG_LIBRARY luxrays-smallluxgpu PATHS ../luxrays/lib ${LuxRays_HOME}/lib)
  	FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include)
- 	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
+-	FIND_LIBRARY(LUXCORE_LIBRARY luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist )
++	FIND_LIBRARY(LUXCORE_LIBRARY luxrays-luxcore PATHS ../luxrays/lib ${LuxRays_HOME}/lib)
 +	SET(LUXCORE_INCLUDE_DIRS "${LUXCORE_INCLUDE_DIRS}/luxrays")
 +	SET(SLG_INCLUDE_DIRS "${SLG_INCLUDE_DIRS}/luxrays")
  ENDIF(APPLE)
  
  IF (SLG_INCLUDE_DIRS AND SLG_LIBRARY)
-diff -NurB a/src/CMakeLists.txt LuxMark-luxmark_v3.1/src/CMakeLists.txt
---- a/src/CMakeLists.txt	2021-01-29 13:51:49.906557862 +0100
-+++ LuxMark-luxmark_v3.1/src/CMakeLists.txt	2021-01-29 22:18:08.100389034 +0100
-@@ -139,8 +139,8 @@
+--- a/src/CMakeLists.txt	2022-10-10 00:42:57.571532444 +0200
++++ LuxMark-luxmark_v3.1/src/CMakeLists.txt	2022-10-10 00:43:26.316531420 +0200
+@@ -139,8 +139,15 @@
  ELSE(APPLE)
  	ADD_EXECUTABLE(luxmark ${LUXMARK_SRCS})
  
 -	TARGET_LINK_LIBRARIES(luxmark ${LUXCORE_LIBRARY} ${SLG_LIBRARY} ${LUXRAYS_LIBRARY} ${EMBREE_LIBRARY} ${Boost_LIBRARIES} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENCL_LIBRARIES} ${OPENIMAGEIO_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network )
 -	
-+	TARGET_LINK_LIBRARIES(luxmark ${LUXCORE_LIBRARY} ${SLG_LIBRARY} ${LUXRAYS_LIBRARY} ${EMBREE_LIBRARY} ${Boost_LIBRARIES} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENCL_LIBRARIES} ${OPENIMAGEIO_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Half ${OpenCL_LIBRARIES} ${Embree_LIBRARIES})
-+
++       TARGET_LINK_LIBRARIES(luxmark ${LUXCORE_LIBRARY} ${SLG_LIBRARY} ${LUXRAYS_LIBRARY} 
++               Boost::boost Boost::thread Boost::system Boost::filesystem Boost::serialization Boost::iostreams
++               Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network
++               OpenGL::GL
++               OpenCL::OpenCL
++               embree
++               OpenImageIO::OpenImageIO
++               OpenEXR::OpenEXR
++               )
  	# This instructs FREEGLUT to emit a pragma for the static version
  	SET_TARGET_PROPERTIES(luxmark PROPERTIES COMPILE_DEFINITIONS FREEGLUT_STATIC)
  

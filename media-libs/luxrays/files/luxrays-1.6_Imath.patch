@@ -1,0 +1,12 @@
+diff -NurB a/include/slg/imagemap/imagemap.h b/include/slg/imagemap/imagemap.h
+--- a/include/slg/imagemap/imagemap.h	2022-10-02 23:34:10.715632526 +0200
++++ b/include/slg/imagemap/imagemap.h	2022-10-02 23:59:14.823578972 +0200
+@@ -19,7 +19,7 @@
+ #ifndef _SLG_IMAGEMAP_H
+ #define	_SLG_IMAGEMAP_H
+ 
+-#include <OpenEXR/half.h>
++#include <Imath/half.h>
+ #include <OpenImageIO/imageio.h>
+ OIIO_NAMESPACE_USING
+ 

@@ -41,23 +41,11 @@ PATCHES+=( "${FILESDIR}/${PN}-qt5.patch" )
 
 S="${WORKDIR}/LuxMark-${PN}_v${PV}"
 src_prepare() {
-        rm "${S}/cmake/Packages/FindOpenCL.cmake"
-        rm "${S}/cmake/Packages/FindEmbree.cmake"
-        rm "${S}/cmake/Packages/FindGLEW.cmake"
-        rm "${S}/cmake/Packages/FindGLUT.cmake"
-        rm "${S}/cmake/Packages/FindOpenEXR.cmake"
-
-	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
+        rm -r "${S}/cmake/Packages"
 
 	PATCHES+=( "${FILESDIR}/${PN}-${PV}_link_stuff.patch" )
 
-	if use debug ; then
-		PATCHES+=( "${FILESDIR}/${P}_luxrays-shared.patch" )
-	else
-		PATCHES+=( "${FILESDIR}/${PN}-${SLOT}_luxrays_static.patch" )
-	fi
 	cmake_src_prepare
-
 }
 
 src_configure() {
