@@ -302,9 +302,8 @@ diff -Nurb LuxCore-luxrender_v1.6/src/luxrays/core/device.cpp c/src/luxrays/core
  
  		if (enableOpenGLInterop) {
  #if defined (__APPLE__)
-diff -Nurb LuxCore-luxrender_v1.6/src/luxrays/utils/ocl.cpp c/src/luxrays/utils/ocl.cpp
---- LuxCore-luxrender_v1.6/src/luxrays/utils/ocl.cpp	2016-05-09 22:17:57.000000000 +0200
-+++ c/src/luxrays/utils/ocl.cpp	2020-11-12 19:52:42.773166106 +0100
+--- a/src/luxrays/utils/ocl.cpp	2022-10-15 18:32:20.640660629 +0200
++++ LuxCore-luxrender_v1.6/src/luxrays/utils/ocl.cpp	2022-10-15 18:55:26.338611291 +0200
 @@ -147,14 +147,14 @@
  
  cl::Program *oclKernelCache::ForcedCompile(cl::Context &context, cl::Device &device,
@@ -340,9 +339,8 @@ diff -Nurb LuxCore-luxrender_v1.6/src/luxrays/utils/ocl.cpp c/src/luxrays/utils/
 +		auto bins = program->getInfo<CL_PROGRAM_BINARIES>();
  		assert (bins.size() == 1);
 -		VECTOR_CLASS<size_t> sizes = program->getInfo<CL_PROGRAM_BINARY_SIZES>();
--		assert (sizes.size() == 1);
-+//		cl::vector<size_t> sizes = program->getInfo<CL_PROGRAM_BINARY_SIZES>();
-+//		assert (sizes.size() == 1);
++		cl::vector<size_t> sizes = program->getInfo<CL_PROGRAM_BINARY_SIZES>();
+ 		assert (sizes.size() == 1);
  
 -		if (sizes[0] > 0) {
 +		if (bins[0].size() > 0) {
@@ -388,9 +386,8 @@ diff -Nurb LuxCore-luxrender_v1.6/src/luxrays/utils/ocl.cpp c/src/luxrays/utils/
 +		auto bins = program->getInfo<CL_PROGRAM_BINARIES>();
  		assert (bins.size() == 1);
 -		VECTOR_CLASS<size_t> sizes = program->getInfo<CL_PROGRAM_BINARY_SIZES>();
--		assert (sizes.size() == 1);
-+		//cl::vector<size_t> sizes = program->getInfo<CL_PROGRAM_BINARY_SIZES>();
-+		assert (bins[0].size() == 1);
++		cl::vector<size_t> sizes = program->getInfo<CL_PROGRAM_BINARY_SIZES>();
+ 		assert (sizes.size() == 1);
  
  		// Create the file only if the binaries include something
 -		if (sizes[0] > 0) {

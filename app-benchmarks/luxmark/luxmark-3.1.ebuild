@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI="7"
+EAPI="8"
 
 inherit cmake flag-o-matic desktop
 
@@ -43,7 +43,10 @@ S="${WORKDIR}/LuxMark-${PN}_v${PV}"
 src_prepare() {
         rm -r "${S}/cmake/Packages"
 
-	PATCHES+=( "${FILESDIR}/${PN}-${PV}_link_stuff.patch" )
+	PATCHES+=(
+			"${FILESDIR}/${PN}-${PV}_link_stuff.patch"
+			"${FILESDIR}/${PN}-${PV}_boost_matching_python.patch"
+		)
 
 	cmake_src_prepare
 }
@@ -60,12 +63,15 @@ src_configure() {
 	mycmakeargs=("${mycmakeargs}
 		  -DLUX_DOCUMENTATION=OFF
 		  -DCMAKE_INSTALL_PREFIX=/usr")
+        if use opencl ; then
+                append-cppflags -DCL_HPP_CL_2_2_DEFAULT_BUILD -DCL_HPP_TARGET_OPENCL_VERSION=220 -DCL_HPP_MINIMUM_OPENCL_VERSION=220
+        else
+                append-cppflags -DLUXRAYS_DISABLE_OPENCL
+        fi
+
         BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
         einfo "Boost python versions: $BoostPythons "
-        mycmakeargs=( -DPythonVersions="${BoostPythons}")
-
-	! use opencl && mycmakeargs=("${mycmakeargs}
-		  -DLUXRAYS_DISABLE_OPENCL=ON")
+        mycmakeargs=( "-DPythonVersions=${BoostPythons}")
 
 	cmake_src_configure
 }

@@ -1,6 +1,5 @@
-diff -Nurb LuxCore-luxrender_v1.6/cmake/Dependencies.cmake c/cmake/Dependencies.cmake
---- LuxCore-luxrender_v1.6/cmake/Dependencies.cmake	2016-05-09 22:17:57.000000000 +0200
-+++ c/cmake/Dependencies.cmake	2020-11-12 19:52:42.759166105 +0100
+--- a/cmake/Dependencies.cmake	2022-10-17 13:41:31.479457391 +0200
++++ LuxCore-luxrender_v1.6/cmake/Dependencies.cmake	2022-10-17 14:11:09.057394099 +0200
 @@ -16,8 +16,8 @@
  # limitations under the License.
  ################################################################################
@@ -104,9 +103,22 @@ diff -Nurb LuxCore-luxrender_v1.6/cmake/Dependencies.cmake c/cmake/Dependencies.
  	include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
  	link_directories(${Boost_LIBRARY_DIRS})
  	# Don't use old boost versions interfaces
-@@ -108,19 +159,19 @@
+@@ -81,7 +132,7 @@
+ 	endif()
  endif ()
  
+-
++if(BUILD_SAMPELS_OPENGL)
+ # OpenGL
+ find_package(OpenGL)
+ 
+@@ -106,21 +157,24 @@
+ if (GLUT_FOUND)
+ 	include_directories(BEFORE SYSTEM ${GLUT_INCLUDE_PATH})
+ endif ()
++endif(BUILD_SAMPELS_OPENGL)
+ 
++if(NOT LUXRAYS_DISABLE_OPENCL)
  # OpenCL
 -set(OPENCL_ROOT                "${OPENCL_SEARCH_PATH}")
  find_package(OpenCL)
@@ -116,11 +128,12 @@ diff -Nurb LuxCore-luxrender_v1.6/cmake/Dependencies.cmake c/cmake/Dependencies.
 +if (OpenCL_FOUND)
 +	include_directories(BEFORE SYSTEM ${OpenCL_INCLUDE_DIR} ${OpenCL_C_INCLUDE_DIR})
  endif ()
++endif(NOT LUXRAYS_DISABLE_OPENCL)
  
  # Intel Embree
  set(EMBREE_ROOT                "${EMBREE_SEARCH_PATH}")
 -find_package(Embree)
-+find_package(Embree 2)
++find_package(Embree 3)
  
 -if (EMBREE_FOUND)
 -	include_directories(BEFORE SYSTEM ${EMBREE_INCLUDE_PATH})
@@ -130,26 +143,27 @@ diff -Nurb LuxCore-luxrender_v1.6/cmake/Dependencies.cmake c/cmake/Dependencies.
  endif ()
  
  # OpenMP
-@@ -159,3 +210,4 @@
- 		SET(FLEX_NOT_AVAILABLE 1)
- 	ENDIF (NOT FLEX_FOUND)
- ENDIF (NOT FLEX_NOT_AVAILABLE)
-+
-diff -NurB a/CMakeLists.txt LuxCore-luxrender_v1.6/CMakeLists.txt
---- a/CMakeLists.txt	2022-10-03 01:00:18.986448507 +0200
-+++ LuxCore-luxrender_v1.6/CMakeLists.txt	2022-10-03 01:02:38.052443556 +0200
-@@ -25,8 +25,8 @@
+--- a/CMakeLists.txt	2022-10-17 13:41:31.478457391 +0200
++++ LuxCore-luxrender_v1.6/CMakeLists.txt	2022-10-17 14:23:36.355367491 +0200
+@@ -25,11 +25,13 @@
  #
  ################################################################################
  # Fresh start
 -cmake_minimum_required(VERSION 2.8)
 -cmake_policy(VERSION 2.8)
-+cmake_minimum_required(VERSION 3.2)
-+cmake_policy(VERSION 3.2)
- #Remove the following when the version check is at least 2.8.4
- SET(CMAKE_LEGACY_CYGWIN_WIN32 0)
+-#Remove the following when the version check is at least 2.8.4
+-SET(CMAKE_LEGACY_CYGWIN_WIN32 0)
++cmake_minimum_required(VERSION 3.20)
++cmake_policy(VERSION 3.20)
  
-@@ -54,9 +54,9 @@
++include(CMakeDependentOption)
++
++option(BUILD_SAMPLES "Build samples")
++cmake_dependent_option(BUILD_SAMPLES_OPENGL "Build samples requiring OpenGL" OFF "BUILD_SAMPLES" OFF )
+ project(LuxRays)
+ 
+ # Don't over-configure
+@@ -54,9 +56,9 @@
  # cmake does need to know which of the possible configurations
  # to generate
  if(NOT CMAKE_BUILD_TYPE)
@@ -161,7 +175,16 @@ diff -NurB a/CMakeLists.txt LuxCore-luxrender_v1.6/CMakeLists.txt
  
  message(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
  
-@@ -77,18 +77,18 @@
+@@ -64,8 +66,6 @@
+ INCLUDE(Configuration)
+ INCLUDE(KernelPreprocess)
+ 
+-# Install CMake modules
+-#add_subdirectory(CMake)
+ 
+ SET(LuxRays_INCLUDE_DIR "${LuxRays_SOURCE_DIR}/include")
+ include_directories("${LuxRays_INCLUDE_DIR}")
+@@ -77,20 +77,15 @@
  	MESSAGE(FATAL_ERROR "--> Could not locate required Boost files - Please check ${BOOST_SEARCH_PATH}")
  endif()
  
@@ -173,22 +196,24 @@ diff -NurB a/CMakeLists.txt LuxCore-luxrender_v1.6/CMakeLists.txt
 -if (NOT OPENCL_FOUND AND NOT LUXRAYS_DISABLE_OPENCL)
 -	MESSAGE(ERROR "--> Could not locate required OpenCL files, disabling OpenCL support - Please check ${OPENCL_SEARCH_PATH}")
 -	SET(LUXRAYS_DISABLE_OPENCL 1)
-+if (NOT OpenCL_FOUND AND NOT LUXRAYS_DISABLE_OPENCL)
-+	MESSAGE(FATAL_ERROR "--> Could not locate required OpenCL files")
-+#	SET(LUXRAYS_DISABLE_OPENCL 1)
- endif()
- 
- if (NOT OPENGL_FOUND AND NOT LUXRAYS_DISABLE_OPENCL)
+-endif()
+-
+-if (NOT OPENGL_FOUND AND NOT LUXRAYS_DISABLE_OPENCL)
 -	MESSAGE(ERROR "--> Could not locate required OpenGL files, disabling OpenCL support, disabling samples build")
 -	SET(LUXRAYS_DISABLE_OPENCL 1)
-+	MESSAGE(FATAL_ERROR "--> Could not locate required OpenGL files")
-+#	SET(LUXRAYS_DISABLE_OPENCL 1)
++if (NOT OpenCL_FOUND AND NOT LUXRAYS_DISABLE_OPENCL)
++	MESSAGE(FATAL_ERROR "--> Could not locate required OpenCL files")
  endif()
  
++if(BUILD_SAMPLES_OPENGL)
  if (NOT GLEW_FOUND)
-@@ -99,8 +99,8 @@
+ 	MESSAGE(FATAL_ERROR "--> Could not locate required GLEW files, disabling samples build - Please check ${GLEW_SEARCH_PATH}")
+ endif()
+@@ -98,9 +93,10 @@
+ if (NOT GLUT_FOUND)
  	MESSAGE(FATAL_ERROR "--> Could not locate required GLUT files, disabling samples build - Please check ${GLUT_SEARCH_PATH}")
  endif()
++endif(BUILD_SAMPLES_OPENGL)
  
 -if (NOT EMBREE_FOUND)
 -	MESSAGE(FATAL_ERROR "--> Could not locate required Intel Embree files - Please check ${EMBREE_SEARCH_PATH}")
@@ -197,75 +222,90 @@ diff -NurB a/CMakeLists.txt LuxCore-luxrender_v1.6/CMakeLists.txt
  endif()
  
  if (LUXRAYS_DISABLE_OPENCL)
-diff -Nurb LuxCore-luxrender_v1.6/samples/benchsimple/CMakeLists.txt c/samples/benchsimple/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/benchsimple/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/benchsimple/CMakeLists.txt	2020-11-12 19:52:42.766166105 +0100
+@@ -128,22 +124,17 @@
+ #
+ ################################################################################
+ 
+-if(NOT APPLE OR OSX_BUILD_DEMOS)
++if(BUILD_SAMPLES)
+ 	add_subdirectory(samples/benchsimple)
+ 	add_subdirectory(samples/luxcoredemo)
+ 	add_subdirectory(samples/luxcorescenedemo)
+ 	add_subdirectory(samples/luxcoreimplserializationdemo)
+-endif()
+-
+-if(OPENGL_FOUND AND GLUT_FOUND AND GLEW_FOUND)
+-	add_subdirectory(samples/smallluxgpu4)
+-endif(OPENGL_FOUND AND GLUT_FOUND AND GLEW_FOUND)
+-
+-add_subdirectory(samples/luxcoreconsole)
+-if(OPENGL_FOUND)
+-	add_subdirectory(samples/luxcoreui)
+-endif(OPENGL_FOUND)
+-
++	add_subdirectory(samples/luxcoreconsole)
++	if(BUILD_SAMPLES_OPENGL)
++		add_subdirectory(samples/smallluxgpu4)
++		add_subdirectory(samples/luxcoreui)
++	endif(BUILD_SAMPLES_OPENGL)
++endif(BUILD_SAMPLES)
+ 
+ ################################################################################
+ #
+diff -NurB b/samples/benchsimple/CMakeLists.txt c/samples/benchsimple/CMakeLists.txt
+--- b/samples/benchsimple/CMakeLists.txt	2022-10-02 23:59:14.831578971 +0200
++++ c/samples/benchsimple/CMakeLists.txt	2022-10-03 00:27:56.225517680 +0200
 @@ -21,4 +21,4 @@
  
  add_executable(benchsimple benchsimple.cpp)
  add_definitions(${VISIBILITY_FLAGS})
 -target_link_libraries(benchsimple luxrays ${EMBREE_LIBRARY})
-+target_link_libraries(benchsimple luxrays ${Embree_LIBRARY})
-diff -Nurb LuxCore-luxrender_v1.6/samples/luxcoreconsole/CMakeLists.txt c/samples/luxcoreconsole/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/luxcoreconsole/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/luxcoreconsole/CMakeLists.txt	2020-11-12 19:52:42.766166105 +0100
++target_link_libraries(benchsimple luxrays OpenCL::OpenCL embree)
+diff -NurB b/samples/luxcoreconsole/CMakeLists.txt c/samples/luxcoreconsole/CMakeLists.txt
+--- b/samples/luxcoreconsole/CMakeLists.txt	2022-10-02 23:59:14.832578971 +0200
++++ c/samples/luxcoreconsole/CMakeLists.txt	2022-10-03 00:27:56.225517680 +0200
 @@ -28,4 +28,4 @@
  
  add_executable(luxcoreconsole ${LUXCORECONSOLE_SRCS})
  
 -TARGET_LINK_LIBRARIES(luxcoreconsole luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcoreconsole luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-diff -Nurb LuxCore-luxrender_v1.6/samples/luxcoredemo/CMakeLists.txt c/samples/luxcoredemo/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/luxcoredemo/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/luxcoredemo/CMakeLists.txt	2020-11-12 19:52:42.766166105 +0100
++TARGET_LINK_LIBRARIES(luxcoreconsole luxcore smallluxgpu luxrays TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG OpenCL::OpenCL OpenImageIO::OpenImageIO embree)
+diff -NurB b/samples/luxcoredemo/CMakeLists.txt c/samples/luxcoredemo/CMakeLists.txt
+--- b/samples/luxcoredemo/CMakeLists.txt	2022-10-02 23:59:14.832578971 +0200
++++ c/samples/luxcoredemo/CMakeLists.txt	2022-10-03 00:27:56.225517680 +0200
 @@ -29,4 +29,4 @@
  add_executable(luxcoredemo ${LUXCORELIBDEMO_SRCS})
  add_definitions(${VISIBILITY_FLAGS})
  
 -TARGET_LINK_LIBRARIES(luxcoredemo luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcoredemo luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-diff -Nurb LuxCore-luxrender_v1.6/samples/luxcoreimplserializationdemo/CMakeLists.txt c/samples/luxcoreimplserializationdemo/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/luxcoreimplserializationdemo/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/luxcoreimplserializationdemo/CMakeLists.txt	2020-11-12 19:52:42.766166105 +0100
++TARGET_LINK_LIBRARIES(luxcoredemo luxcore smallluxgpu luxrays TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG OpenCL::OpenCL OpenImageIO::OpenImageIO embree)
+diff -NurB b/samples/luxcoreimplserializationdemo/CMakeLists.txt c/samples/luxcoreimplserializationdemo/CMakeLists.txt
+--- b/samples/luxcoreimplserializationdemo/CMakeLists.txt	2022-10-02 23:59:14.832578971 +0200
++++ c/samples/luxcoreimplserializationdemo/CMakeLists.txt	2022-10-03 00:27:56.225517680 +0200
 @@ -28,4 +28,4 @@
  
  add_executable(luxcoreimplserializationdemo ${LUXCOREIMPL_SERIALIZATIONDEMO_SRCS})
  
 -TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-diff -Nurb LuxCore-luxrender_v1.6/samples/luxcorescenedemo/CMakeLists.txt c/samples/luxcorescenedemo/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/luxcorescenedemo/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/luxcorescenedemo/CMakeLists.txt	2020-11-12 19:52:42.766166105 +0100
++TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore smallluxgpu luxrays TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG OpenCL::OpenCL OpenImageIO::OpenImageIO embree)
+diff -NurB b/samples/luxcorescenedemo/CMakeLists.txt c/samples/luxcorescenedemo/CMakeLists.txt
+--- b/samples/luxcorescenedemo/CMakeLists.txt	2022-10-02 23:59:14.832578971 +0200
++++ c/samples/luxcorescenedemo/CMakeLists.txt	2022-10-03 00:27:56.226517680 +0200
 @@ -29,4 +29,4 @@
  add_executable(luxcorescenedemo ${LUXCORESCENEDEMO_SRCS})
  add_definitions(${VISIBILITY_FLAGS})
  
 -TARGET_LINK_LIBRARIES(luxcorescenedemo luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcorescenedemo luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-diff -Nurb LuxCore-luxrender_v1.6/samples/luxcoreui/CMakeLists.txt c/samples/luxcoreui/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/luxcoreui/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/luxcoreui/CMakeLists.txt	2020-11-12 19:52:42.770166106 +0100
-@@ -84,7 +84,7 @@
- 	glfw
- 	${GLFW_LIBRARIES}
- 	luxcore smallluxgpu luxrays
--	${EMBREE_LIBRARY}
-+	${Embree_LIBRARY}
- 	${OPENGL_LIBRARIES}
- 	${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES}
- 	${GTK3_LIBRARIES})
-diff -Nurb LuxCore-luxrender_v1.6/samples/smallluxgpu4/CMakeLists.txt c/samples/smallluxgpu4/CMakeLists.txt
---- LuxCore-luxrender_v1.6/samples/smallluxgpu4/CMakeLists.txt	2016-05-09 22:17:57.000000000 +0200
-+++ c/samples/smallluxgpu4/CMakeLists.txt	2020-11-12 19:52:42.766166105 +0100
-@@ -30,9 +30,9 @@
- add_executable(slg4 ${SMALLLUXGPU_SRCS})
- 
++TARGET_LINK_LIBRARIES(luxcorescenedemo luxcore smallluxgpu luxrays TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG OpenCL::OpenCL OpenImageIO::OpenImageIO embree)
+diff -NurB b/samples/smallluxgpu4/CMakeLists.txt c/samples/smallluxgpu4/CMakeLists.txt
+--- b/samples/smallluxgpu4/CMakeLists.txt	2022-10-02 23:59:14.838578971 +0200
++++ c/samples/smallluxgpu4/CMakeLists.txt	2022-10-03 00:27:56.233517680 +0200
+@@ -32,7 +32,7 @@
  if(APPLE)
--	TARGET_LINK_LIBRARIES(slg4 luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	TARGET_LINK_LIBRARIES(slg4 luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+ 	TARGET_LINK_LIBRARIES(slg4 luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
  else(APPLE)
 -	TARGET_LINK_LIBRARIES(slg4 luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	TARGET_LINK_LIBRARIES(slg4 luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${OPENGL_LIBRARIES} ${GLEW_LIBRARY} ${GLUT_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	TARGET_LINK_LIBRARIES(slg4 luxcore smallluxgpu luxrays glew glut TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG OpenCL::OpenCL OpenImageIO::OpenImageIO embree glut)
  endif(APPLE)
  
  # This instructs FREEGLUT to emit a pragma for the static version
@@ -277,11 +317,11 @@ diff -Nurb LuxCore-luxrender_v1.6/src/luxcore/CMakeLists.txt c/src/luxcore/CMake
  add_definitions(${VISIBILITY_FLAGS})
  if(APPLE)
 -	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${Boost_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${Boost_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup luxcore smallluxgpu luxrays embree TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG)
      SET_TARGET_PROPERTIES(pyluxcore PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible
  else()
 -	target_link_libraries(pyluxcore luxcore smallluxgpu luxrays ${EMBREE_LIBRARY} ${Boost_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	target_link_libraries(pyluxcore luxcore smallluxgpu luxrays ${Embree_LIBRARY} ${Boost_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(pyluxcore luxcore smallluxgpu luxrays embree TIFF::TIFF OpenEXR::OpenEXR PNG::PNG JPEG::JPEG)
  endif()
  
  set_target_properties(pyluxcore PROPERTIES PREFIX "")

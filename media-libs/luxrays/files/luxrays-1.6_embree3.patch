@@ -1,15 +1,3 @@
-diff -NurB a/cmake/Dependencies.cmake b/cmake/Dependencies.cmake
---- a/cmake/Dependencies.cmake	2021-02-01 20:58:54.868265188 +0100
-+++ b/cmake/Dependencies.cmake	2021-02-01 16:10:11.299904056 +0100
-@@ -167,7 +167,7 @@
- 
- # Intel Embree
- set(EMBREE_ROOT                "${EMBREE_SEARCH_PATH}")
--find_package(Embree 2)
-+find_package(Embree 3)
- 
- if (Embree_FOUND)
- 	message(STATUS              "Embree found: ${Embree_VERSION}")
 diff -NurB a/include/luxrays/accelerators/embreeaccel.h b/include/luxrays/accelerators/embreeaccel.h
 --- a/include/luxrays/accelerators/embreeaccel.h	2021-02-01 20:58:54.870265188 +0100
 +++ b/include/luxrays/accelerators/embreeaccel.h	2021-02-01 16:10:11.304904056 +0100

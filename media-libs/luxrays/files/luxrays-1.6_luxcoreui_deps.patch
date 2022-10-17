@@ -1,0 +1,735 @@
+diff -NurB a/samples/luxcoreui/CMakeLists.txt LuxCore-luxrender_v1.6/samples/luxcoreui/CMakeLists.txt
+--- a/samples/luxcoreui/CMakeLists.txt	2022-10-15 20:26:25.017416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/CMakeLists.txt	2022-10-17 10:56:25.963810081 +0200
+@@ -16,23 +16,24 @@
+ # limitations under the License.
+ ################################################################################
+ 
+-#############################################################################
+-#
+-# GLFW library
+-#
+-#############################################################################
+-
+-add_subdirectory(deps/glfw-3.1.1)
+-include_directories(deps/glfw-3.1.1/include)
+-include_directories(deps/nfd/include)
+-
+-#############################################################################
+-#
+-# luxcore UI binary
+-#
+-#############################################################################
+ 
+-include_directories(deps/imgui-1.46)
++
++# glfw
++find_package(glfw3 REQUIRED)
++
++if (glfw3_FOUND)
++        include_directories(BEFORE SYSTEM ${glfw3_INCLUDE_DIR})
++endif ()
++
++#nativefiledialog-extended
++find_package(nativefiledialog-extended REQUIRED)
++
++# imgui
++find_package(PkgConfig REQUIRED)
++#include(FindPkgConfig)
++pkg_check_modules(imgui REQUIRED imgui)
++
++include_directories(BEFORE SYSTEM ${imgui_INCLUDEDIR})
+ 
+ set(LUXCOREUI_SRCS
+ 	luxcoreui.cpp
+@@ -59,32 +60,9 @@
+ 	statswindow.cpp
+ 	imgui_impl_glfw.cpp
+ 	resources/luxlogo_bg.cpp
+-	deps/imgui-1.46/imgui.cpp
+-	deps/imgui-1.46/imgui_demo.cpp
+-	deps/imgui-1.46/imgui_draw.cpp
+-	deps/nfd/nfd_common.c
+ 	)
+ 
+-IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+-	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_win.cpp)
+-ENDIF()
+-
+-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+-	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_gtk.c)
+-	add_definitions(${GTK3_CFLAGS_OTHER})
+-ENDIF()
+-
+-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+-	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_cocoa.m)
+-ENDIF()
+-
+-add_executable(luxcoreui ${LUXCOREUI_SRCS})
+-
+-TARGET_LINK_LIBRARIES(luxcoreui
+-	glfw
+-	${GLFW_LIBRARIES}
+-	luxcore smallluxgpu luxrays
+-	${EMBREE_LIBRARY}
+-	${OPENGL_LIBRARIES}
+-	${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES}
+-	${GTK3_LIBRARIES})
++add_executable(luxrays-luxcoreui ${LUXCOREUI_SRCS})
++
++TARGET_LINK_LIBRARIES(luxrays-luxcoreui luxrays-luxcore luxrays-smallluxgpu luxrays-luxrays glfw imgui ${nativefiledialog-extended_LIBRARIES} Python::Python OpenCL::OpenCL OpenImageIO::OpenImageIO embree ${Embree_LIBRARY} ${OPENGL_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${GTK3_LIBRARIES})
++
+diff -NurB a/samples/luxcoreui/epsilonwindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/epsilonwindow.cpp
+--- a/samples/luxcoreui/epsilonwindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/epsilonwindow.cpp	2022-10-17 00:08:09.875996037 +0200
+@@ -56,14 +56,14 @@
+ 	float fval;
+ 
+ 	fval = props.Get("scene.epsilon.min").Get<float>();
+-	if (ImGui::InputFloat("Min. epsilon value", &fval, 0.f, 0.f, 15)) {
++	if (ImGui::InputFloat("Min. epsilon value", &fval, 0.f, 0.f, "%.15f")) {
+ 		props.Set(Property("scene.epsilon.min")(fval));
+ 		modifiedProps = true;
+ 	}
+ 	LuxCoreApp::HelpMarker("scene.epsilon.min");
+ 
+ 	fval = props.Get("scene.epsilon.max").Get<float>();
+-	if (ImGui::InputFloat("Max. epsilon value", &fval, 0.f, 0.f, 15)) {
++	if (ImGui::InputFloat("Max. epsilon value", &fval, 0.f, 0.f, "%.15f")) {
+ 		props.Set(Property("scene.epsilon.max")(fval));
+ 		modifiedProps = true;
+ 	}
+diff -NurB a/samples/luxcoreui/filmchannelswindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/filmchannelswindow.cpp
+--- a/samples/luxcoreui/filmchannelswindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/filmchannelswindow.cpp	2022-10-17 09:49:54.271952208 +0200
+@@ -46,7 +46,7 @@
+ 	const u_int filmWidth = app->session->GetFilm().GetWidth();
+ 	const u_int filmHeight = app->session->GetFilm().GetHeight();
+ 	
+-	auto_ptr<float> pixels(new float[filmWidth * filmHeight * 3]);
++	unique_ptr<float> pixels(new float[filmWidth * filmHeight * 3]);
+ 	switch (type) {
+ 		case Film::CHANNEL_RADIANCE_PER_PIXEL_NORMALIZED:
+ 		case Film::CHANNEL_DIRECT_DIFFUSE:
+@@ -200,7 +200,7 @@
+ 
+ 	if (count > 0) {
+ 		ImGui::PushID(label.c_str());
+-		if (ImGui::CollapsingHeader((label + ": " + ToString(count) + " chanel(s)").c_str(), NULL, true, true)) {
++		if (ImGui::CollapsingHeader((label + ": " + ToString(count) + " chanel(s)").c_str(), NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			for (u_int i = 0; i < count; ++i)
+ 				DrawShowCheckBox(label, type, i);
+ 		}
+diff -NurB a/samples/luxcoreui/filmoutputswindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/filmoutputswindow.cpp
+--- a/samples/luxcoreui/filmoutputswindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/filmoutputswindow.cpp	2022-10-16 23:48:02.371039031 +0200
+@@ -72,7 +72,7 @@
+ 	const u_int filmWidth = app->session->GetFilm().GetWidth();
+ 	const u_int filmHeight = app->session->GetFilm().GetHeight();
+ 	
+-	auto_ptr<float> pixels(new float[filmWidth * filmHeight * 3]);
++	unique_ptr<float> pixels(new float[filmWidth * filmHeight * 3]);
+ 	switch (type) {
+ 		case Film::OUTPUT_RGB:
+ 		case Film::OUTPUT_POSITION:
+@@ -94,7 +94,7 @@
+ 			break;
+ 		}
+ 		case Film::OUTPUT_RGBA: {
+-			auto_ptr<float> filmPixels;
++			unique_ptr<float> filmPixels;
+ 			filmPixels.reset(new float[app->session->GetFilm().GetOutputSize(type)]);
+ 			app->session->GetFilm().GetOutput<float>(type, filmPixels.get(), index);
+ 			
+@@ -109,7 +109,7 @@
+ 			break;
+ 		}
+ 		case Film::OUTPUT_RGBA_IMAGEPIPELINE: {
+-			auto_ptr<float> filmPixels;
++			unique_ptr<float> filmPixels;
+ 			filmPixels.reset(new float[app->session->GetFilm().GetOutputSize(type)]);
+ 			app->session->GetFilm().GetOutput<float>(type, filmPixels.get(), index);
+ 			
+@@ -124,7 +124,7 @@
+ 		case Film::OUTPUT_INDIRECT_SHADOW_MASK:
+ 		case Film::OUTPUT_RAYCOUNT:
+ 		case Film::OUTPUT_OBJECT_ID_MASK: {
+-			auto_ptr<float> filmPixels;
++			unique_ptr<float> filmPixels;
+ 			filmPixels.reset(new float[app->session->GetFilm().GetOutputSize(type)]);
+ 			app->session->GetFilm().GetOutput<float>(type, filmPixels.get(), index);
+ 			
+@@ -135,7 +135,7 @@
+ 		}
+ 		case Film::OUTPUT_MATERIAL_ID:
+ 		case Film::OUTPUT_OBJECT_ID: {
+-			auto_ptr<u_int> filmPixels;
++			unique_ptr<u_int> filmPixels;
+ 			filmPixels.reset(new u_int[app->session->GetFilm().GetOutputSize(type)]);
+ 			app->session->GetFilm().GetOutput<u_int>(type, filmPixels.get(), index);
+ 
+@@ -145,7 +145,7 @@
+ 			break;
+ 		}
+ 		case Film::OUTPUT_UV: {
+-			auto_ptr<float> filmPixels;
++			unique_ptr<float> filmPixels;
+ 			filmPixels.reset(new float[app->session->GetFilm().GetOutputSize(type)]);
+ 			app->session->GetFilm().GetOutput<float>(type, filmPixels.get(), index);
+ 
+@@ -284,7 +284,7 @@
+ 	// To add a new output
+ 	//--------------------------------------------------------------------------
+ 
+-	if (ImGui::CollapsingHeader("New Film output", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("New Film output", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		// Film output name
+ 		ImGui::InputText("Output name", newOutputNameBuff, 4 * 1024);
+ 		const string prefix = "film.outputs." + string(newOutputNameBuff);
+@@ -387,7 +387,7 @@
+ 	// The list of current outputs
+ 	//--------------------------------------------------------------------------
+ 
+-	if (ImGui::CollapsingHeader("Current Film output(s)", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Current Film output(s)", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		boost::unordered_set<string> outputNames;
+ 		boost::unordered_map<string, u_int> typeCount;
+ 		vector<string> outputKeys = props.GetAllNames("film.outputs.");
+@@ -418,7 +418,7 @@
+ 				typeCount[type] += 1;
+ 			const u_int index = typeCount[type];
+ 
+-			ImGui::SetNextTreeNodeOpened(true, ImGuiSetCond_Appearing);
++			ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+ 			if (ImGui::TreeNode(type.c_str())) {
+ 				const string fileName = props.Get("film.outputs." + outputName + ".filename").Get<string>();
+ 				char fileNameBuff[4 * 1024];
+@@ -462,7 +462,7 @@
+ 	// The list of current film channels
+ 	//--------------------------------------------------------------------------
+ 
+-	if (ImGui::CollapsingHeader("Current Film channel(s)", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Current Film channel(s)", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		const Film &film = app->session->GetFilm();
+ 		u_int count;
+ 
+diff -NurB a/samples/luxcoreui/filmradiancegroupswindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/filmradiancegroupswindow.cpp
+--- a/samples/luxcoreui/filmradiancegroupswindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/filmradiancegroupswindow.cpp	2022-10-16 23:44:45.286046048 +0200
+@@ -59,7 +59,7 @@
+ 		const string radianceGroupIndexStr = ToString(radianceGroupIndex);
+ 		ImGui::PushID(radianceGroupIndexStr.c_str());
+ 
+-		ImGui::SetNextTreeNodeOpened(true, ImGuiSetCond_Appearing);
++		ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+ 		if (ImGui::TreeNode(("Radiance group: #" + radianceGroupIndexStr).c_str())) {
+ 			// Check the properties include a definition for this group
+ 
+diff -NurB a/samples/luxcoreui/helpwindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/helpwindow.cpp
+--- a/samples/luxcoreui/helpwindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/helpwindow.cpp	2022-10-16 23:18:15.620102649 +0200
+@@ -38,7 +38,7 @@
+ 		// GUI help
+ 		//----------------------------------------------------------------------
+ 
+-		if (ImGui::CollapsingHeader("GUI help", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("GUI help", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			ImGui::PushID("GUI help");
+ 			ImGui::ShowUserGuide();
+ 			ImGui::PopID();
+@@ -47,7 +47,7 @@
+ 		// Keys help
+ 		//----------------------------------------------------------------------
+ 
+-		if (ImGui::CollapsingHeader("Keys help", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Keys help", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			ImGui::PushID("Keys help");
+ 
+ 			LuxCoreApp::ColoredLabelText("h", "%s", "toggle Help");
+diff -NurB a/samples/luxcoreui/imagewindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/imagewindow.cpp
+--- a/samples/luxcoreui/imagewindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/imagewindow.cpp	2022-10-16 23:45:55.115043562 +0200
+@@ -237,7 +237,7 @@
+ 		LuxCoreApp::ColoredLabelText("Max. value:", "(%f, %f, %f)", imgMax[0], imgMax[1], imgMax[2]);
+ 		LuxCoreApp::ColoredLabelText("Avg. value:", "(%f, %f, %f)", imgAvg[0], imgAvg[1], imgAvg[2]);
+ 
+-		ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 4.f);
++		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.f);
+ 		ImGui::BeginChild("Image", ImVec2(0.f, 0.f), true, ImGuiWindowFlags_HorizontalScrollbar);
+ 
+ 		const u_int filmWidth = app->session->GetFilm().GetWidth();
+diff -NurB a/samples/luxcoreui/imgui_impl_glfw.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.cpp
+--- a/samples/luxcoreui/imgui_impl_glfw.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.cpp	2022-10-17 09:43:44.348965379 +0200
+@@ -23,7 +23,7 @@
+ // This is the main rendering function that you have to implement and provide to ImGui (via setting up 'RenderDrawListsFn' in the ImGuiIO structure)
+ // If text or lines are blurry when integrating ImGui in your engine:
+ // - in your Render function, try translating your projection matrix by (0.5f,0.5f) or (0.375f,0.375f)
+-static void ImGui_ImplGlfw_RenderDrawLists(ImDrawData* draw_data)
++void ImGui_ImplGlfw_RenderDrawLists(ImDrawData* draw_data)
+ {
+     // We are using the OpenGL fixed pipeline to make the example code simpler to read!
+     // A probable faster way to render would be to collate all vertices from all cmd_lists into a single vertex buffer.
+@@ -97,12 +97,12 @@
+     glPopAttrib();
+ }
+ 
+-static const char* ImGui_ImplGlfw_GetClipboardText()
++static const char* ImGui_ImplGlfw_GetClipboardText(void*)
+ {
+     return glfwGetClipboardString(g_Window);
+ }
+ 
+-static void ImGui_ImplGlfw_SetClipboardText(const char* text)
++static void ImGui_ImplGlfw_SetClipboardText(void*, const char* text)
+ {
+     glfwSetClipboardString(g_Window, text);
+ }
+@@ -203,7 +203,7 @@
+     io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
+     io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+ 
+-    io.RenderDrawListsFn = ImGui_ImplGlfw_RenderDrawLists;
++//    io.RenderDrawListsFn = ImGui_ImplGlfw_RenderDrawLists;
+     io.SetClipboardTextFn = ImGui_ImplGlfw_SetClipboardText;
+     io.GetClipboardTextFn = ImGui_ImplGlfw_GetClipboardText;
+ #ifdef _WIN32
+@@ -224,7 +224,7 @@
+ void ImGui_ImplGlfw_Shutdown()
+ {
+     ImGui_ImplGlfw_InvalidateDeviceObjects();
+-    ImGui::Shutdown();
++    ImGui::DestroyContext();
+ }
+ 
+ void ImGui_ImplGlfw_NewFrame()
+diff -NurB a/samples/luxcoreui/imgui_impl_glfw.h LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.h
+--- a/samples/luxcoreui/imgui_impl_glfw.h	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.h	2022-10-17 09:31:39.526991186 +0200
+@@ -22,4 +22,6 @@
+ IMGUI_API void        ImGui_ImplGlFw_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+ IMGUI_API void        ImGui_ImplGlfw_CharCallback(GLFWwindow* window, unsigned int c);
+ 
++IMGUI_API void ImGui_ImplGlfw_RenderDrawLists(ImDrawData* draw_data);
++
+ #endif	/* _IMGUI_IMPL_GLFW_H */
+diff -NurB a/samples/luxcoreui/logwindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/logwindow.cpp
+--- a/samples/luxcoreui/logwindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/logwindow.cpp	2022-10-16 22:44:48.284174121 +0200
+@@ -46,7 +46,7 @@
+ 	if (!opened)
+ 		return;
+ 
+-	ImGui::SetNextWindowSize(ImVec2(512.f, 200.f), ImGuiSetCond_Appearing);
++	ImGui::SetNextWindowSize(ImVec2(512.f, 200.f), ImGuiCond_Appearing);
+ 
+ 	if (ImGui::Begin(windowTitle.c_str(), &opened)) {
+ 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.f);
+@@ -78,7 +78,7 @@
+ 			ImGui::TextUnformatted(buffer.begin());
+ 
+ 		if (scrollToBottom)
+-			ImGui::SetScrollHere(1.0f);
++			ImGui::SetScrollHereY(1.0f);
+ 		scrollToBottom = false;
+ 
+ 		ImGui::EndChild();
+diff -NurB a/samples/luxcoreui/luxcoreapp.h LuxCore-luxrender_v1.6/samples/luxcoreui/luxcoreapp.h
+--- a/samples/luxcoreui/luxcoreapp.h	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/luxcoreapp.h	2022-10-16 22:59:49.516142032 +0200
+@@ -47,8 +47,8 @@
+ 	void RunApp();
+ 
+ 	static void LogHandler(const char *msg);
+-	static void ColoredLabelText(const ImVec4 &col, const char *label, const char *fmt, ...) IM_PRINTFARGS(3);
+-	static void ColoredLabelText(const char *label, const char *fmt, ...) IM_PRINTFARGS(2);
++	static void ColoredLabelText(const ImVec4 &col, const char *label, const char *fmt, ...);// IM_PRINTFARGS(3);
++	static void ColoredLabelText(const char *label, const char *fmt, ...); //IM_PRINTFARGS(2);
+ 	static void HelpMarker(const char *desc);
+ 	
+ 	static ImVec4 colLabel;
+diff -NurB a/samples/luxcoreui/objecteditorwindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/objecteditorwindow.cpp
+--- a/samples/luxcoreui/objecteditorwindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/objecteditorwindow.cpp	2022-10-16 23:34:10.805068639 +0200
+@@ -97,7 +97,7 @@
+ 		// Object properties
+ 		//----------------------------------------------------------------------
+ 
+-		if (ImGui::CollapsingHeader((objectName + " properties").c_str(), NULL, true, true)) {
++		if (ImGui::CollapsingHeader((objectName + " properties").c_str(), NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			ImGui::PushID("Object properties");
+ 			ImGui::PushItemWidth(ImGui::GetWindowSize().x / 3);
+ 
+@@ -130,7 +130,7 @@
+ 		// Advance editing
+ 		//----------------------------------------------------------------------
+ 
+-		if (ImGui::CollapsingHeader("Advance editor", NULL, true, false)) {
++		if (ImGui::CollapsingHeader("Advance editor", NULL, ImGuiTreeNodeFlags_Framed )) {
+ 			ImGui::PushID("Advance editor");
+ 
+ 			//------------------------------------------------------------------
+diff -NurB a/samples/luxcoreui/ocldevicewindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/ocldevicewindow.cpp
+--- a/samples/luxcoreui/ocldevicewindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/ocldevicewindow.cpp	2022-10-16 23:58:31.937016615 +0200
+@@ -89,7 +89,7 @@
+ 			modifiedProps = true;
+ 		}
+ 
+-		if (ImGui::CollapsingHeader("General", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("General", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			int ival;
+ 			bool bval;
+ 
+@@ -133,14 +133,14 @@
+ 			LuxCoreApp::HelpMarker("opencl.gpu.workgroup.size");
+ 		}
+ 
+-		if (ImGui::CollapsingHeader("Device list", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Device list", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			// Show the device list
+ 			for (u_int i = 0; i < deviceDescriptions.size(); ++i) {
+ 				luxrays::DeviceDescription *desc = deviceDescriptions[i];
+ 
+ 				bool bval = (selection.at(i) == '1');
+ 
+-				ImGui::SetNextTreeNodeOpened(true, ImGuiSetCond_Appearing);
++				ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+ 				if (ImGui::TreeNode(("#" + ToString(i) + " => " + desc->GetName() +
+ 						(bval ? " (Used)" : " (Not used)")).c_str())) {
+ 					luxrays::DeviceDescription *desc = deviceDescriptions[i];
+diff -NurB a/samples/luxcoreui/renderenginewindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/renderenginewindow.cpp
+--- a/samples/luxcoreui/renderenginewindow.cpp	2022-10-15 20:26:25.022416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/renderenginewindow.cpp	2022-10-16 23:56:52.300020162 +0200
+@@ -135,7 +135,7 @@
+ 	float fval;
+ 	int ival;
+ 
+-	if (ImGui::CollapsingHeader("Path Depth", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Path Depth", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		ival = props.Get("path.maxdepth").Get<int>();
+ 		if (ImGui::InputInt("Maximum recursion depth", &ival)) {
+ 			props.Set(Property("path.maxdepth")(ival));
+@@ -144,7 +144,7 @@
+ 		LuxCoreApp::HelpMarker("path.maxdepth");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Russian Roulette", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Russian Roulette", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		ival = props.Get("path.russianroulette.depth").Get<int>();
+ 		if (ImGui::InputInt("Russian Roulette start depth", &ival)) {
+ 			props.Set(Property("path.russianroulette.depth")(ival));
+@@ -160,7 +160,7 @@
+ 		LuxCoreApp::HelpMarker("path.russianroulette.cap");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Clamping", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Clamping", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		fval = props.Get("path.clamping.variance.maxvalue").Get<float>();
+ 		if (ImGui::InputFloat("Variance clamping", &fval)) {
+ 			props.Set(Property("path.clamping.variance.maxvalue")(fval));
+@@ -177,7 +177,7 @@
+ 		LuxCoreApp::HelpMarker("path.clamping.pdf.value");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Options", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Options", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		bval = props.Get("path.fastpixelfilter.enable").Get<bool>();
+ 		if (ImGui::Checkbox("Use fast pixel filter", &bval)) {
+ 			props.Set(Property("path.fastpixelfilter.enable")(bval));
+@@ -199,7 +199,7 @@
+ 	float fval;
+ 	int ival;
+ 
+-	if (ImGui::CollapsingHeader("Path Depths", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Path Depths", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		ival = props.Get("biaspath.pathdepth.total").Get<int>();
+ 		if (ImGui::InputInt("Maximum total recursion depth", &ival)) {
+ 			props.Set(Property("biaspath.pathdepth.total")(ival));
+@@ -229,7 +229,7 @@
+ 		LuxCoreApp::HelpMarker("biaspath.pathdepth.specular");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Sampling", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Sampling", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		ival = props.Get("biaspath.sampling.aa.size").Get<int>();
+ 		if (ImGui::InputInt(("x" + ToString(ival) + " Anti-aliasing").c_str(), &ival)) {
+ 			props.Set(Property("biaspath.sampling.aa.size")(ival));
+@@ -266,7 +266,7 @@
+ 		LuxCoreApp::HelpMarker("biaspath.sampling.directlight.size");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Clamping", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Clamping", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		fval = props.Get("biaspath.clamping.variance.maxvalue").Get<float>();
+ 		if (ImGui::InputFloat("Variance clamping", &fval)) {
+ 			props.Set(Property("biaspath.clamping.variance.maxvalue")(fval));
+@@ -283,7 +283,7 @@
+ 		LuxCoreApp::HelpMarker("biaspath.clamping.pdf.value");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Lights", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Lights", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		fval = props.Get("biaspath.lights.lowthreshold").Get<float>();
+ 		if (ImGui::InputFloat("Light low intensity threshold", &fval)) {
+ 			props.Set(Property("biaspath.lights.lowthreshold")(fval));
+@@ -306,7 +306,7 @@
+ 		LuxCoreApp::HelpMarker("biaspath.lights.firstvertexsamples");
+ 	}
+ 
+-	if (!rtMode && ImGui::CollapsingHeader("Tiles", NULL, true, true)) {
++	if (!rtMode && ImGui::CollapsingHeader("Tiles", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		if (props.IsDefined("tile.size.x") || props.IsDefined("tile.size.y")) {
+ 			ival = props.Get("tile.size.x").Get<int>();
+ 			if (ImGui::SliderInt("Tile width", &ival, 8, 512, "%.0f pixels")) {
+@@ -367,7 +367,7 @@
+ 		}
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Options", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Options", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		bval = props.Get("biaspath.forceblackbackground.enable").Get<bool>();
+ 		if (ImGui::Checkbox("Force black background", &bval)) {
+ 			props.Set(Property("biaspath.forceblackbackground.enable")(bval));
+@@ -380,7 +380,7 @@
+ void RenderEngineWindow::PathOCLGUI(Properties &props, bool &modifiedProps) {
+ 	PathGUI(props, modifiedProps);
+ 
+-	if (ImGui::CollapsingHeader("OpenCL Options", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("OpenCL Options", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		bool bval;
+ 		int ival;
+ 
+@@ -416,7 +416,7 @@
+ void RenderEngineWindow::BiasPathOCLGUI(Properties &props, bool &modifiedProps, const bool rtMode) {
+ 	BiasPathGUI(props, modifiedProps, rtMode);
+ 
+-	if (!rtMode && ImGui::CollapsingHeader("OpenCL Options", NULL, true, true)) {
++	if (!rtMode && ImGui::CollapsingHeader("OpenCL Options", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		int ival;
+ 
+ 		ival = props.Get("biaspathocl.devices.maxtiles").Get<int>();
+@@ -432,7 +432,7 @@
+ 	float fval;
+ 	int ival;
+ 
+-	if (ImGui::CollapsingHeader("Path Depths", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Path Depths", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		ival = props.Get("path.maxdepth").Get<int>();
+ 		if (ImGui::InputInt("Maximum eye path recursion depth", &ival)) {
+ 			props.Set(Property("path.maxdepth")(ival));
+@@ -448,7 +448,7 @@
+ 		LuxCoreApp::HelpMarker("light.maxdepth");
+ 	}
+ 
+-	if (ImGui::CollapsingHeader("Russian Roulette", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Russian Roulette", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		ival = props.Get("path.russianroulette.depth").Get<int>();
+ 		if (ImGui::InputInt("Russian Roulette start depth", &ival)) {
+ 			props.Set(Property("path.russianroulette.depth")(ival));
+@@ -468,7 +468,7 @@
+ }
+ 
+ void RenderEngineWindow::ThreadsGUI(Properties &props, bool &modifiedProps) {
+-	if (ImGui::CollapsingHeader("Threads", NULL, true, true)) {
++	if (ImGui::CollapsingHeader("Threads", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 		int ival = props.Get("native.threads.count").Get<int>();
+ 		if (ImGui::SliderInt("Threads count", &ival, 1, boost::thread::hardware_concurrency())) {
+ 			props.Set(Property("native.threads.count")(ival));
+@@ -511,7 +511,7 @@
+ 	if (typeIndex == typeTable.GetVal("RTBIASPATHOCL")) {
+ 		BiasPathOCLGUI(props, modifiedProps, true);
+ 
+-		if (ImGui::CollapsingHeader("Real Time", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Real Time", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			// Preview phase
+ 
+ 			int ival = props.Get("rtpath.resolutionreduction.preview").Get<int>();
+@@ -604,7 +604,7 @@
+ 	if (typeIndex == typeTable.GetVal("RTPATHOCL")) {
+ 		PathOCLGUI(props, modifiedProps);
+ 
+-		if (ImGui::CollapsingHeader("Real Time", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Real Time", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			int ival = props.Get("rtpath.miniterations").Get<int>();
+ 			if (ImGui::InputInt("Min. pass count per frame", &ival)) {
+ 				props.Set(Property("rtpath.miniterations")(ival));
+@@ -676,7 +676,7 @@
+ 	if (typeIndex == typeTable.GetVal("BIDIRVMCPU")) {
+ 		BiDirGUI(props, modifiedProps);
+ 
+-		if (ImGui::CollapsingHeader("BiDirVM Options", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("BiDirVM Options", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			float fval;
+ 			int ival;
+ 
+@@ -719,7 +719,7 @@
+ 		float fval;
+ 		int ival;
+ 
+-		if (ImGui::CollapsingHeader("Path Depth", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Path Depth", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			ival = props.Get("light.maxdepth").Get<int>();
+ 			if (ImGui::InputInt("Maximum light path recursion depth", &ival)) {
+ 				props.Set(Property("light.maxdepth")(ival));
+@@ -728,7 +728,7 @@
+ 			LuxCoreApp::HelpMarker("light.maxdepth");
+ 		}
+ 
+-		if (ImGui::CollapsingHeader("Russian Roulette", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Russian Roulette", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			ival = props.Get("light.russianroulette.depth").Get<int>();
+ 			if (ImGui::InputInt("Russian Roulette start depth", &ival)) {
+ 				props.Set(Property("light.russianroulette.depth")(ival));
+diff -NurB a/samples/luxcoreui/statswindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/statswindow.cpp
+--- a/samples/luxcoreui/statswindow.cpp	2022-10-15 20:26:25.024416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/statswindow.cpp	2022-10-17 00:00:33.269012295 +0200
+@@ -33,7 +33,7 @@
+ 	if (!opened)
+ 		return;
+ 
+-	ImGui::SetNextWindowSize(ImVec2(512.f, 200.f), ImGuiSetCond_Appearing);
++	ImGui::SetNextWindowSize(ImVec2(512.f, 200.f), ImGuiCond_Appearing);
+ 
+ 	if (ImGui::Begin(windowTitle.c_str(), &opened)) {
+ 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.f);
+@@ -44,7 +44,7 @@
+ 		const Properties &stats = session->GetStats();
+ 
+ 		// GUI information
+-		if (ImGui::CollapsingHeader("GUI information", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("GUI information", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			LuxCoreApp::ColoredLabelText("GUI loop time:", "%fms (%fms)",
+ 					1000.0 * app->guiLoopTimeShortAvg, 1000.0 * app->guiLoopTimeLongAvg);
+ 			LuxCoreApp::ColoredLabelText("GUI sleep time:", "%fms", 1000.0 * app->guiSleepTime);
+@@ -54,7 +54,7 @@
+ 		}
+ 
+ 		// Rendering information
+-		if (ImGui::CollapsingHeader("Rendering information", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Rendering information", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			const string engineType = config->ToProperties().Get("renderengine.type").Get<string>();
+ 			LuxCoreApp::ColoredLabelText("Render engine:", "%s", engineType.c_str());
+ 
+@@ -99,7 +99,7 @@
+ 			}
+ 		}
+ 
+-		if (ImGui::CollapsingHeader("Intersection devices used", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Intersection devices used", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			// Intersection devices
+ 			const Property &deviceNames = stats.Get("stats.renderengine.devices");
+ 
+@@ -128,7 +128,7 @@
+ 			}
+ 		}
+ 
+-		if (ImGui::CollapsingHeader("Intersection devices available", NULL, true, true)) {
++		if (ImGui::CollapsingHeader("Intersection devices available", NULL, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) {
+ 			luxrays::Context ctx;
+ 			const vector<luxrays::DeviceDescription *> &deviceDescriptions = ctx.GetAvailableDeviceDescriptions();
+ 
+diff -NurB a/samples/luxcoreui/uikeys.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/uikeys.cpp
+--- a/samples/luxcoreui/uikeys.cpp	2022-10-15 20:26:25.024416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/uikeys.cpp	2022-10-17 00:16:59.908977165 +0200
+@@ -110,7 +110,7 @@
+ 
+ 	LuxCoreApp *app = (LuxCoreApp *)glfwGetWindowUserPointer(window);
+ 
+-	if (ImGui::IsMouseHoveringAnyWindow())
++	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
+ 		return;
+ 
+ 	//--------------------------------------------------------------------------
+diff -NurB a/samples/luxcoreui/uiloop.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/uiloop.cpp
+--- a/samples/luxcoreui/uiloop.cpp	2022-10-15 20:26:25.024416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/uiloop.cpp	2022-10-17 09:44:40.410963383 +0200
+@@ -50,11 +50,11 @@
+ 	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+ 
+ 	ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
+-	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, frameBufferHeight), ImGuiSetCond_Always);
++	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, frameBufferHeight), ImGuiCond_Always);
+ 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+ 
+ 	bool opened = true;
+-	if (ImGui::Begin("Background_logo", &opened, ImVec2(0.f, 0.f), 0.0f,
++	if (ImGui::Begin("Background_logo", &opened,
+ 			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+ 			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
+ 			ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoInputs)) {
+@@ -144,11 +144,11 @@
+ 	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+ 		
+ 	ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
+-	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, frameBufferHeight), ImGuiSetCond_Always);
++	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, frameBufferHeight), ImGuiCond_Always);
+ 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+ 
+ 	bool opened = true;
+-	if (ImGui::Begin("Rendering", &opened, ImVec2(0.f, 0.f), 0.0f,
++	if (ImGui::Begin("Rendering", &opened,
+ 			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+ 			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
+ 			ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoInputs)) {
+@@ -269,7 +269,7 @@
+ 
+ 	// Top screen label (to use only in full-screen mode)
+ 	/*ImGui::SetNextWindowPos(ImVec2(0.f, -8.f));
+-	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, 0.f), ImGuiSetCond_Always);
++	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, 0.f), ImGuiCond_Always);
+ 
+ 	bool topOpened = true;
+ 	if (ImGui::Begin("Top screen label", &topOpened,
+@@ -282,7 +282,7 @@
+ 
+ 	// Bottom screen label
+ 	ImGui::SetNextWindowPos(ImVec2(0.f, (frameBufferHeight - 25.f)));
+-	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, 0.f), ImGuiSetCond_Always);
++	ImGui::SetNextWindowSize(ImVec2(frameBufferWidth, 0.f), ImGuiCond_Always);
+ 
+ 	bool bottomOpened = true;
+ 	if (ImGui::Begin("Bottom screen label", &bottomOpened,
+@@ -511,6 +511,8 @@
+ 		MainMenuBar();
+ 
+ 		ImGui::Render();
++		ImGui_ImplGlfw_RenderDrawLists(ImGui::GetDrawData());
++
+ 
+ 		glfwSwapBuffers(window);
+ 		glfwPollEvents();
+diff -NurB a/samples/luxcoreui/uimenu.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/uimenu.cpp
+--- a/samples/luxcoreui/uimenu.cpp	2022-10-15 20:26:25.025416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/uimenu.cpp	2022-10-16 23:13:21.404113124 +0200
+@@ -33,7 +33,8 @@
+ void LuxCoreApp::MenuRendering() {
+ 	if (ImGui::MenuItem("Load")) {
+ 		nfdchar_t *outPath = NULL;
+-		nfdresult_t result = NFD_OpenDialog("cfg;lxs", NULL, &outPath);
++		nfdfilteritem_t filterItem[] = {{"cfg;lxs", "cfg,lxs"}};
++		nfdresult_t result = NFD_OpenDialog(&outPath, filterItem, std::extent<decltype(filterItem)>::value, nullptr);
+ 
+ 		if (result == NFD_OKAY) {
+ 			LoadRenderConfig(outPath);
+diff -NurB a/samples/luxcoreui/uimouse.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/uimouse.cpp
+--- a/samples/luxcoreui/uimouse.cpp	2022-10-15 20:26:25.025416932 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/uimouse.cpp	2022-10-17 00:17:40.033975736 +0200
+@@ -41,7 +41,7 @@
+ void LuxCoreApp::GLFW_MousePositionCallBack(GLFWwindow *window, double x, double y) {
+ 	LuxCoreApp *app = (LuxCoreApp *)glfwGetWindowUserPointer(window);
+ 
+-	if (ImGui::IsMouseHoveringAnyWindow() || !app->session) {
++	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || !app->session) {
+ 		app->mouseButton0 = false;
+ 		app->mouseButton2 = false;
+ 		return;
+@@ -120,7 +120,7 @@
+ 
+ 	LuxCoreApp *app = (LuxCoreApp *)glfwGetWindowUserPointer(window);
+ 
+-	if (ImGui::IsMouseHoveringAnyWindow() || !app->session) {
++	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow) || !app->session) {
+ 		app->mouseButton0 = false;
+ 		app->mouseButton2 = false;
+ 		return;

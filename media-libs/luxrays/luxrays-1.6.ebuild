@@ -22,13 +22,23 @@ fi
 LICENSE="GPL-3"
 SLOT="1"
 KEYWORDS="~amd64"
-IUSE="debug opencl shared"
+IUSE="debug opencl opengl samples shared"
 
 REQUIRED_USE="debug? ( shared )"
 
 RDEPEND="dev-libs/boost:=
 	media-libs/openimageio
 	media-libs/embree
+	opengl? (
+		virtual/opengl
+		media-libs/freeglut
+		>=media-libs/glfw-3.0.0
+		samples?
+			(
+			media-libs/imgui
+			dev-libs/nativefiledialog-extended
+			)
+		)
 	virtual/opengl
 	opencl? (
 		dev-libs/clhpp
@@ -44,19 +54,30 @@ PATCHES+=(
 	"${FILESDIR}/${P}_embree3.patch"
 	"${FILESDIR}/${P}_kernel_preprocess.patch"
 	"${FILESDIR}/${P}_Imath.patch"
-	"${FILESDIR}/${P}_system_deps_link.patch"
 	"${FILESDIR}/${P}_boost_python_bindings.patch"
+	"${FILESDIR}/${P}_luxcoreui_deps.patch"
 )
 
 src_prepare() {
 
 	rm -r "${S}/cmake/Packages"
+	rm -r "${S}/samples/luxcoreui/deps"
 	if use shared ; then
-		PATCHES+=( "${FILESDIR}/${PN}-shared_libs.patch" )
+		#chage libraries to shared
+		grep ${S} -ilRe '\(add_library[(][^ ]*[ ]*\)STATIC' | xargs sed -i -e 's/\(add_library[\(][^ ]*[ ]*\)STATIC/\1SHARED/g'
+		PATCHES+=( "${FILESDIR}/${P}_shared_libs.patch" )
 	fi
 
 	cmake_src_prepare
 
+	#rename libraries for slotting with luxcorerender
+	grep ${S} -ilRe 'add_\(library\|executable\)[(]\([^ ]*[ )]\)' | xargs sed -i -e 's/\(add_\(library\|executable\)[\(]\)\([^ ]*\)/\1luxrays-\3/g'
+	grep ${S} -ilRe 'target_link_libraries[(]\([^ ]*\([ )]\|$\)\)' | xargs sed -i -e 's/\(target_link_libraries[(]\)\([^\s]*\)/\1luxrays-\2/gi'
+	grep ${S} -ilRe 'set_target_properties[(]' |xargs sed -i -e 's/\(set_target_properties[(]\)\([^ ]*\)/\1luxrays-\2/gi'
+	#put renamed libraries into link targets
+	grep ${S} -ilRe 'target_link_libraries[(]' |xargs sed -i -e's/\(target_link_libraries[(][^ ]*[ ]*.*\)\([ ]\)\(luxrays[ ]\)/\1\2luxrays-\3/ig'
+	grep ${S} -ilRe 'target_link_libraries[(]' |xargs sed -i -e's/\(target_link_libraries[(][^ ]*[ ]*.*\)\([ ]\)\(luxcore[ ]\)/\1\2luxrays-\3/ig'
+	grep ${S} -ilRe 'target_link_libraries[(]' |xargs sed -i -e's/\(target_link_libraries[(][^ ]*[ ]*.*\)\([ ]\)\(smallluxgpu[ ]\)/\1\2luxrays-\3/ig'
 	$(grep -Rwle 'cl2.hpp' | xargs sed -i 's|cl2\.hpp|opencl\.hpp|g')
 }
 
@@ -70,17 +91,15 @@ src_configure() {
 	fi
 	BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
 	einfo "Boost python versions: $BoostPythons "
-	mycmakeargs=( -DPythonVersions="${BoostPythons}")
+	local mycmakeargs=(
+		-DBUILD_SAMPLES=$(usex samples)
+		-DBUILD_SAMPLES_OPENGL=$(usex opengl)
+	)
+
+	mycmakeargs+=( -DPythonVersions="${BoostPythons}")
 	use opencl || mycmakeargs=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev -DPythonVersions="${BoostPythons}")
 	cmake_src_configure
 }
-
-#src_compile() {
-#	CMAKE_USE_DIR="${S}/luxcore"
-#	cmake_src_compile
-#	cmake_build smallluxgpu
-#	cmake_build luxrays
-#}
 
 src_install() {
 	dodoc AUTHORS.txt
@@ -90,13 +109,16 @@ src_install() {
 	doins -r include/slg
 	doins -r include/luxrays
 	if use shared ; then
-		newlib.so ${BUILD_DIR}/lib/libluxcore.so lib${PN}-lluxcore.so
-		newlib.so ${BUILD_DIR}/lib/libsmallluxgpu.so lib${PN}-smallluxgpu.so
-		newlib.so ${BUILD_DIR}/lib/libluxrays.so lib${PN}-luxrays.so
+		dolib.so ${BUILD_DIR}/lib/libluxrays-luxcore.so
+		dolib.so ${BUILD_DIR}/lib/libluxrays-smallluxgpu.so
+		dolib.so ${BUILD_DIR}/lib/libluxrays-luxrays.so
 	else
-		newlib.a ${BUILD_DIR}/lib/libluxcore.a lib${PN}-luxcore.a
-		newlib.a ${BUILD_DIR}/lib/libsmallluxgpu.a lib${PN}-smallluxgpu.a
-		newlib.a ${BUILD_DIR}/lib/libluxrays.a lib${PN}-luxrays.a
+		dolib.a ${BUILD_DIR}/lib/libluxrays-luxcore.a
+		dolib.a ${BUILD_DIR}/lib/libluxrays-smallluxgpu.a
+		dolib.a ${BUILD_DIR}/lib/libluxrays-luxrays.a
+	fi
+	if use samples ; then
+		dobin ${BUILD_DIR}/bin/*
 	fi
 }
 

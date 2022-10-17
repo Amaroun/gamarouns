@@ -1,0 +1,93 @@
+diff -NurB aa/cmake/Dependencies.cmake LuxMark-luxmark_v3.1/cmake/Dependencies.cmake
+--- aa/cmake/Dependencies.cmake	2022-10-13 22:31:39.916948664 +0200
++++ LuxMark-luxmark_v3.1/cmake/Dependencies.cmake	2022-10-13 22:30:24.342951355 +0200
+@@ -33,20 +33,72 @@
+ include_directories(SYSTEM ${OPENIMAGEIO_INCLUDE_DIR})
+ find_package(OpenEXR REQUIRED)
+ 
++set(PythonVersions "" CACHE STRING "Eglible python versions") 
++
++function(TestPythonVersion TestVersion)
++        message(STATUS "Testing PythonVersion ${TestVersion}")
++        find_package(Python ${TestVersion} EXACT COMPONENTS Interpreter Development)
++        if(NOT ${Python_FOUND})
++                set(PythonVersionEgligible OFF PARENT_SCOPE)
++                return()
++        endif()
++# Find Boost
++set(Boost_USE_STATIC_LIBS	OFF)
++set(Boost_USE_MULTITHREADED     ON)
++set(Boost_USE_STATIC_RUNTIME    OFF)
++set(BOOST_ROOT                  "${BOOST_SEARCH_PATH}")
++#set(Boost_DEBUG                 ON)
++set(Boost_MINIMUM_VERSION	"1.44.0")
++
++
++set(LUXRAYS_BOOST_COMPONENTS thread program_options filesystem serialization iostreams regex system "python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}")
++find_package(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${LUXRAYS_BOOST_COMPONENTS})
++if (NOT Boost_FOUND)
++        # Try again with the other type of libs
++        if(Boost_USE_STATIC_LIBS)
++                set(Boost_USE_STATIC_LIBS OFF)
++        else()
++                set(Boost_USE_STATIC_LIBS ON)
++        endif()
++        find_package(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${LUXRAYS_BOOST_COMPONENTS})
++endif()
++        if(NOT ${Boost_FOUND})
++                set(PythonVersionEligible OFF PARENT_SCOPE)
++                return()
++        endif()
++        set(PythonVersionEligible ON PARENT_SCOPE)
++
++endfunction()
++
++
+ if(NOT APPLE)
+     # Apple has these available hardcoded and matched in macos repo, see Config_OSX.cmake
+ 
+-    include_directories(SYSTEM ${OPENEXR_INCLUDE_DIRS})
++    include_directories(BEFORE SYSTEM ${OPENEXR_INCLUDE_DIRS})
+     find_package(TIFF REQUIRED)
+-    include_directories(SYSTEM ${TIFF_INCLUDE_DIR})
++    include_directories(BEFORE SYSTEM ${TIFF_INCLUDE_DIR})
+     find_package(JPEG REQUIRED)
+-    include_directories(SYSTEM ${JPEG_INCLUDE_DIR})
++    include_directories(BEFORE SYSTEM ${JPEG_INCLUDE_DIR})
+     find_package(PNG REQUIRED)
+-    include_directories(SYSTEM ${PNG_PNG_INCLUDE_DIR})
+-	# Find Python Libraries
+-	find_package(PythonLibs)
++    include_directories(BEFORE SYSTEM ${PNG_PNG_INCLUDE_DIR})
++
++        list(REVERSE PythonVersions)
++        message(STATUS "PythonsVersions: ${PythonVersions}")
++        foreach(PythonVersionCandidate IN LISTS PythonVersions )
++                if("X${PythonVersionCandidate}" STREQUAL "X")
++                        continue()
++                endif()
++                message(STATUS "PythonsVersionCandidate: ${PythonVersionCandidate}")
++                TestPythonVersion("${PythonVersionCandidate}")
++                if(${PythonVersionEligible})
++                        find_package(Python ${PythonVersionCandidate} EXACT COMPONENTS Interpreter Development python${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
++                        message(STATUS "Going with Python ${PythonVersionCandidate}")
++                        break()
++                endif()
++        endforeach()
+ endif()
+ 
++
+ # Find Boost
+ set(Boost_USE_STATIC_LIBS       ON)
+ set(Boost_USE_MULTITHREADED     ON)
+diff -NurB aa/src/CMakeLists.txt LuxMark-luxmark_v3.1/src/CMakeLists.txt
+--- aa/src/CMakeLists.txt	2022-10-13 22:31:39.927948664 +0200
++++ LuxMark-luxmark_v3.1/src/CMakeLists.txt	2022-10-13 22:30:24.358951354 +0200
+@@ -147,6 +147,7 @@
+                embree
+                OpenImageIO::OpenImageIO
+                OpenEXR::OpenEXR
++		Python::Python
+                )
+ 	# This instructs FREEGLUT to emit a pragma for the static version
+ 	SET_TARGET_PROPERTIES(luxmark PROPERTIES COMPILE_DEFINITIONS FREEGLUT_STATIC)
