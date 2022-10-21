@@ -22,34 +22,44 @@ fi
 LICENSE="GPL-3"
 SLOT="1"
 KEYWORDS="~amd64"
-IUSE="debug opencl opengl samples shared"
+IUSE="debug luxcoreui opencl opengl openmp python samples shared"
 
 REQUIRED_USE="debug? ( shared )"
 
 RDEPEND="dev-libs/boost:=
 	media-libs/openimageio
+	media-libs/openexr
 	media-libs/embree
-	opengl? (
+	media-libs/libpng
+	media-libs/tiff
+	virtual/jpeg
+	samples? (
 		virtual/opengl
 		media-libs/freeglut
 		>=media-libs/glfw-3.0.0
-		samples?
-			(
-			media-libs/imgui
-			dev-libs/nativefiledialog-extended
-			)
 		)
-	virtual/opengl
+	luxcoreui?
+		(
+		media-libs/imgui
+		dev-libs/nativefiledialog-extended
+		)
 	opencl? (
 		dev-libs/clhpp
 		virtual/opencl )"
 
+
 DEPEND="${RDEPEND}"
+
+BDEPEND="sys-devel/flex
+	sys-devel/bison"
+
 S="${WORKDIR}/LuxCore-luxrender_v${PV}"
 
+#	"${FILESDIR}/${P}_system_deps.patch"
+
 PATCHES+=(
-	"${FILESDIR}/${PN}-${SLOT}_cmake_python.patch"
-	"${FILESDIR}/${PN}-${SLOT}_cl2hpp.patch"
+	"${FILESDIR}/${P}_system_deps.patch"
+	"${FILESDIR}/${P}_cl2hpp.patch"
 	"${FILESDIR}/${P}_up_to_date_cpp.patch"
 	"${FILESDIR}/${P}_embree3.patch"
 	"${FILESDIR}/${P}_kernel_preprocess.patch"
@@ -69,7 +79,8 @@ src_prepare() {
 	fi
 
 	cmake_src_prepare
-
+#}
+#post() {
 	#rename libraries for slotting with luxcorerender
 	grep ${S} -ilRe 'add_\(library\|executable\)[(]\([^ ]*[ )]\)' | xargs sed -i -e 's/\(add_\(library\|executable\)[\(]\)\([^ ]*\)/\1luxrays-\3/g'
 	grep ${S} -ilRe 'target_link_libraries[(]\([^ ]*\([ )]\|$\)\)' | xargs sed -i -e 's/\(target_link_libraries[(]\)\([^\s]*\)/\1luxrays-\2/gi'
@@ -92,8 +103,10 @@ src_configure() {
 	BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
 	einfo "Boost python versions: $BoostPythons "
 	local mycmakeargs=(
-		-DBUILD_SAMPLES=$(usex samples)
-		-DBUILD_SAMPLES_OPENGL=$(usex opengl)
+		-DLUXRAYS_SAMPLES=$(usex samples)
+		-DLUXRAYS_LUXCOREUI=$(usex samples)
+		-DLUXRAYS_OPENMP=$(usex openmp)
+		-DLUXRAYS_PYTHON=$(usex python)
 	)
 
 	mycmakeargs+=( -DPythonVersions="${BoostPythons}")
@@ -108,15 +121,28 @@ src_install() {
 	doins -r include/luxcore
 	doins -r include/slg
 	doins -r include/luxrays
+
+	local LIB_TYPE=""
 	if use shared ; then
-		dolib.so ${BUILD_DIR}/lib/libluxrays-luxcore.so
-		dolib.so ${BUILD_DIR}/lib/libluxrays-smallluxgpu.so
-		dolib.so ${BUILD_DIR}/lib/libluxrays-luxrays.so
+		LIB_TYP=".so"
+#		dolib.so ${BUILD_DIR}/lib/libluxrays-luxcore.so
+#		dolib.so ${BUILD_DIR}/lib/libluxrays-smallluxgpu.so
+#		dolib.so ${BUILD_DIR}/lib/libluxrays-luxrays.so
 	else
-		dolib.a ${BUILD_DIR}/lib/libluxrays-luxcore.a
-		dolib.a ${BUILD_DIR}/lib/libluxrays-smallluxgpu.a
-		dolib.a ${BUILD_DIR}/lib/libluxrays-luxrays.a
+		LIB_TYP=".a"
+#		dolib.a ${BUILD_DIR}/lib/libluxrays-luxcore.a
+#		dolib.a ${BUILD_DIR}/lib/libluxrays-smallluxgpu.a
+#		dolib.a ${BUILD_DIR}/lib/libluxrays-luxrays.a
 	fi
+
+	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-luxrays${LIB_TYPE}
+	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-core${LIB_TYPE}
+	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-smallluxgpu${LIB_TYPE}
+
+	if use python ; then
+		dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-pycore${LIB_TYPE}
+	fi
+
 	if use samples ; then
 		dobin ${BUILD_DIR}/bin/*
 	fi
