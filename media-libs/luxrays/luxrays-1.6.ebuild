@@ -124,23 +124,23 @@ src_install() {
 
 	local LIB_TYPE=""
 	if use shared ; then
-		LIB_TYP=".so"
+		LIB_TYPE=".so"
 #		dolib.so ${BUILD_DIR}/lib/libluxrays-luxcore.so
 #		dolib.so ${BUILD_DIR}/lib/libluxrays-smallluxgpu.so
 #		dolib.so ${BUILD_DIR}/lib/libluxrays-luxrays.so
 	else
-		LIB_TYP=".a"
+		LIB_TYPE=".a"
 #		dolib.a ${BUILD_DIR}/lib/libluxrays-luxcore.a
 #		dolib.a ${BUILD_DIR}/lib/libluxrays-smallluxgpu.a
 #		dolib.a ${BUILD_DIR}/lib/libluxrays-luxrays.a
 	fi
 
 	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-luxrays${LIB_TYPE}
-	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-core${LIB_TYPE}
+	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-luxcore${LIB_TYPE}
 	dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-smallluxgpu${LIB_TYPE}
 
 	if use python ; then
-		dolib${LIB_TYPE} ${BUILD_DIR}/lib/libluxrays-pycore${LIB_TYPE}
+		dolib.so ${BUILD_DIR}/lib/luxrays-pyluxcore.so
 	fi
 
 	if use samples ; then

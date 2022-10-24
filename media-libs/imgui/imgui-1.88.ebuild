@@ -18,7 +18,7 @@ SRC_URI="
 LICENSE="MIT"
 SLOT="0/${PV}"
 KEYWORDS="~amd64"
-IUSE="allegro bindings examples freetype glfw glut opengl sdl vulkan"
+IUSE="allegro bindings examples freetype glfw glut opengl sdl vulkan shared"
 S="${WORKDIR}/c${P}"
 
 RDEPEND="
@@ -64,6 +64,8 @@ src_prepare() {
 	rm -r examples/libs || die
 	rm -r misc/*/*.ttf || die
 	rm -r misc/single_file || die
+	mv imconfig.h imconfig.h.in
+	echo "#cmakedefine ImTextureID @ImTextureID@" >> imconfig.h.in
 
 	cp "${FILESDIR}/${P}-CMakeLists.txt" CMakeLists.txt || die
 	cp "${FILESDIR}/imgui.pc.in" imgui.pc.in || die
@@ -86,6 +88,7 @@ src_configure() {
 		-DIMGUI_GLUT=$(usex glut)
 		-DIMGUI_OPENGL=$(usex opengl)
 		-DIMGUI_SDL=$(usex sdl)
+		-DIMGUI_SHARED=$(usex shared)
 		-DIMGUI_VULKAN=$(usex vulkan)
 	)
 	cmake_src_configure

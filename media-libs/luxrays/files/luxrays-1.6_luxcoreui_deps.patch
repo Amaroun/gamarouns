@@ -165,10 +165,10 @@ diff -NurB a/samples/luxcoreui/helpwindow.cpp LuxCore-luxrender_v1.6/samples/lux
  			ImGui::PushID("Keys help");
  
  			LuxCoreApp::ColoredLabelText("h", "%s", "toggle Help");
-diff -NurB a/samples/luxcoreui/imagewindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/imagewindow.cpp
---- a/samples/luxcoreui/imagewindow.cpp	2022-10-15 20:26:25.022416932 +0200
-+++ LuxCore-luxrender_v1.6/samples/luxcoreui/imagewindow.cpp	2022-10-16 23:45:55.115043562 +0200
-@@ -237,7 +237,7 @@
+diff -NurB a/samples/luxcoreui/imagewindow.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/imagewindow.cpp 
+--- a/samples/luxcoreui/imagewindow.cpp	2022-10-22 00:41:42.943599547 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/imagewindow.cpp	2022-10-22 00:43:54.152594875 +0200
+@@ -237,12 +237,12 @@
  		LuxCoreApp::ColoredLabelText("Max. value:", "(%f, %f, %f)", imgMax[0], imgMax[1], imgMax[2]);
  		LuxCoreApp::ColoredLabelText("Avg. value:", "(%f, %f, %f)", imgAvg[0], imgAvg[1], imgAvg[2]);
  
@@ -177,9 +177,15 @@ diff -NurB a/samples/luxcoreui/imagewindow.cpp LuxCore-luxrender_v1.6/samples/lu
  		ImGui::BeginChild("Image", ImVec2(0.f, 0.f), true, ImGuiWindowFlags_HorizontalScrollbar);
  
  		const u_int filmWidth = app->session->GetFilm().GetWidth();
+ 		const u_int filmHeight = app->session->GetFilm().GetHeight();
+-		ImGui::Image((void *) (intptr_t) channelTexID,
++		ImGui::Image((ImTextureID) (channelTexID),
+ 				ImVec2(.01f * imgScale * filmWidth, .01f * imgScale * filmHeight),
+ 				ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+
 diff -NurB a/samples/luxcoreui/imgui_impl_glfw.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.cpp
---- a/samples/luxcoreui/imgui_impl_glfw.cpp	2022-10-15 20:26:25.022416932 +0200
-+++ LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.cpp	2022-10-17 09:43:44.348965379 +0200
+--- a/samples/luxcoreui/imgui_impl_glfw.cpp	2022-10-22 00:41:42.943599547 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/imgui_impl_glfw.cpp	2022-10-22 00:44:28.180593664 +0200
 @@ -23,7 +23,7 @@
  // This is the main rendering function that you have to implement and provide to ImGui (via setting up 'RenderDrawListsFn' in the ImGuiIO structure)
  // If text or lines are blurry when integrating ImGui in your engine:
@@ -204,12 +210,20 @@ diff -NurB a/samples/luxcoreui/imgui_impl_glfw.cpp LuxCore-luxrender_v1.6/sample
  {
      glfwSetClipboardString(g_Window, text);
  }
-@@ -203,7 +203,7 @@
+@@ -158,7 +158,7 @@
+     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, width, height, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
+ 
+     // Store our identifier
+-    io.Fonts->TexID = (void *)(intptr_t)g_FontTexture;
++    io.Fonts->TexID = (ImTextureID)(g_FontTexture);
+ 
+     // Cleanup (don't clear the input data if you want to append new fonts later)
+     io.Fonts->ClearInputData();
+@@ -203,7 +203,6 @@
      io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
      io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
  
 -    io.RenderDrawListsFn = ImGui_ImplGlfw_RenderDrawLists;
-+//    io.RenderDrawListsFn = ImGui_ImplGlfw_RenderDrawLists;
      io.SetClipboardTextFn = ImGui_ImplGlfw_SetClipboardText;
      io.GetClipboardTextFn = ImGui_ImplGlfw_GetClipboardText;
  #ifdef _WIN32
@@ -561,8 +575,8 @@ diff -NurB a/samples/luxcoreui/uikeys.cpp LuxCore-luxrender_v1.6/samples/luxcore
  
  	//--------------------------------------------------------------------------
 diff -NurB a/samples/luxcoreui/uiloop.cpp LuxCore-luxrender_v1.6/samples/luxcoreui/uiloop.cpp
---- a/samples/luxcoreui/uiloop.cpp	2022-10-15 20:26:25.024416932 +0200
-+++ LuxCore-luxrender_v1.6/samples/luxcoreui/uiloop.cpp	2022-10-17 09:44:40.410963383 +0200
+--- a/samples/luxcoreui/uiloop.cpp	2022-10-22 00:41:42.944599547 +0200
++++ LuxCore-luxrender_v1.6/samples/luxcoreui/uiloop.cpp	2022-10-22 00:43:28.673595782 +0200
 @@ -50,11 +50,11 @@
  	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
  
@@ -577,7 +591,16 @@ diff -NurB a/samples/luxcoreui/uiloop.cpp LuxCore-luxrender_v1.6/samples/luxcore
  			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
  			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
  			ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoInputs)) {
-@@ -144,11 +144,11 @@
+@@ -65,7 +65,7 @@
+ 		// There seems to be a bug in ImGui, I have to move down the window or
+ 		// it will hide the menu bar
+ 		ImGui::SetCursorScreenPos(ImVec2(0, 25));
+-		ImGui::Image((void *)(intptr_t)backgroundLogoTexID,
++		ImGui::Image((ImTextureID)(backgroundLogoTexID),
+ 				ImVec2(frameBufferWidth, frameBufferHeight),
+ 				ImVec2(border - pad, 1.f + pad), ImVec2(1.f - border + pad, 0.f - pad));
+ 	}
+@@ -144,15 +144,15 @@
  	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
  		
  	ImGui::SetNextWindowPos(ImVec2(0.f, 0.f));
@@ -591,6 +614,11 @@ diff -NurB a/samples/luxcoreui/uiloop.cpp LuxCore-luxrender_v1.6/samples/luxcore
  			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
  			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
  			ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoInputs)) {
+-		ImGui::Image((void *)(intptr_t)renderFrameBufferTexID,
++		ImGui::Image((ImTextureID)(renderFrameBufferTexID),
+ 				ImVec2(frameBufferWidth, frameBufferHeight),
+ 				ImVec2(0.f, 1.f), ImVec2(1.f, 0.f));
+ 
 @@ -269,7 +269,7 @@
  
  	// Top screen label (to use only in full-screen mode)
