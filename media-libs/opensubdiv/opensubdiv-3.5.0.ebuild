@@ -35,11 +35,11 @@ DEPEND="
 "
 
 PATCHES=(
+	"${FILESDIR}/${PN}-3.5.0-use-gnuinstalldirs.patch"
 	"${FILESDIR}/${PN}-3.4.3-install-tutorials-into-bin.patch"
 	"${FILESDIR}/${PN}-3.4.4-add-CUDA11-compatibility.patch"
 	"${FILESDIR}/${PN}-3.4.4-tbb-2021.patch"
 )
-#	"${FILESDIR}/${PN}-3.3.0-use-gnuinstalldirs.patch"
 
 pkg_pretend() {
 	[[ ${MERGE_TYPE} != binary ]] && use openmp && tc-check-openmp
