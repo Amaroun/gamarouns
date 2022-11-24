@@ -1,219 +1,118 @@
-diff -NurB a/cmake/Dependencies.cmake LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake
---- a/cmake/Dependencies.cmake	2020-08-31 13:11:18.649777535 +0200
-+++ LuxCore-luxcorerender_v2.4/cmake/Dependencies.cmake	2020-08-31 13:11:34.800776882 +0200
-@@ -128,6 +127,56 @@
- 	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
- endif ()
+--- a/samples/luxcoreconsole/CMakeLists.txt	2022-11-16 23:18:21.250344280 +0100
++++ LuxCore-luxcorerender_v2.6/samples/luxcoreconsole/CMakeLists.txt	2022-11-18 16:57:32.920781350 +0100
+@@ -28,8 +28,4 @@
  
-+# OpenVDB
-+set(OpenVDB_ROOT                   "${OpenVDB_SEARCH_PATH}")
-+find_package(OpenVDB REQUIRED)
-+
-+if (OpenVDB_FOUND)
-+	include_directories(BEFORE SYSTEM ${OpenVDB_INCLUDE_PATH})
-+endif ()
-+
-+# OpenColorIo
-+set(OpenColorIO_ROOT                   "${OpenColorIO_SEARCH_PATH}")
-+find_package(OpenColorIO REQUIRED)
-+
-+if (OpenColorIO_FOUND)
-+	include_directories(BEFORE SYSTEM ${OpenColorIO_INCLUDE_PATH})
-+endif ()
-+
-+# cuew
-+set(cuew_ROOT                   "${cuew_SEARCH_PATH}")
-+find_package(cuew REQUIRED)
-+
-+if (cuew_FOUND)
-+	include_directories(BEFORE SYSTEM ${cuew_INCLUDE_PATH})
-+endif ()
-+
-+# OpenSubdiv
-+set(OpenSubdiv_ROOT                   "${OpenSubdiv_SEARCH_PATH}")
-+find_package(OpenSubdiv REQUIRED)
-+
-+if (OpenSubdiv_FOUND)
-+	include_directories(BEFORE SYSTEM ${OpenSubdiv_INCLUDE_PATH})
-+endif ()
-+
-+# clew
-+set(clew_ROOT                   "${clew_SEARCH_PATH}")
-+find_package(clew REQUIRED)
-+
-+if (clew_FOUND)
-+	include_directories(BEFORE SYSTEM ${clew_INCLUDE_PATH})
-+endif ()
-+
-+# BCD
-+set(BCD_ROOT                   "${BCD_SEARCH_PATH}")
-+
-+find_package(BCD)
-+
-+if (BCD_FOUND)
-+       include_directories(BEFORE SYSTEM ${BCD_INCLUDE_PATH})
-+endif ()
-+
-+
- # OpenMP
- if(NOT APPLE)
- 	find_package(OpenMP)
-diff -NurB a/CMakeLists.txt LuxCore-luxcorerender_v2.4/CMakeLists.txt
---- a/CMakeLists.txt	2020-08-31 13:11:18.649777535 +0200
-+++ LuxCore-luxcorerender_v2.4/CMakeLists.txt	2020-09-01 00:12:39.264806993 +0200
-@@ -42,6 +42,9 @@
- enable_language(C)
- enable_language(CXX)
+ add_executable(luxcoreconsole ${LUXCORECONSOLE_SRCS})
  
-+set(CMAKE_CXX_STANDARD 14)
-+set(CMAKE_CXX_STANDARD_REQUIRED ON)
-+
- if (CMAKE_CONFIGURATION_TYPES)
- 
- 	message(STATUS "Multi-config generator detected")
-@@ -56,7 +59,7 @@
- 	# For generators like make, cmake needs to know which variant to use
- 	# so let's have a drop-down selector for it in the GUI:
- 
--	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build configuration")
-+#_cmake_modify_IGNORE 	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build configuration")
- 	set_property(
- 			CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${supported_build_variants})
- 
-@@ -96,13 +99,6 @@
- SET(LuxRays_INCLUDE_DIR "${LuxRays_SOURCE_DIR}/include")
- include_directories("${LuxRays_INCLUDE_DIR}")
- 
--include_directories("${LuxRays_SOURCE_DIR}/deps/json-3.7.3/include")
--include_directories("${LuxRays_SOURCE_DIR}/deps/cuew/include")
--include_directories("${LuxRays_SOURCE_DIR}/deps/clew/include")
--include_directories("${LuxRays_SOURCE_DIR}/deps/optix-7.1.0/include")
--include_directories("${LuxRays_SOURCE_DIR}/deps/spdlog-1.8.0/include")
--include_directories("${LuxRays_SOURCE_DIR}/deps/robin-hood-hashing-3.9.1/src/include")
--
- # Find dependencies
- include(Dependencies)
-
-@@ -134,6 +127,16 @@
- 	MESSAGE(FATAL_ERROR "--> Could not locate required C-BLOSC files - Please check ${BLOSC_SEARCH_PATH}")
- endif()
- 
-+if (NOT CUEW_FOUND)
-+	MESSAGE(FATAL_ERROR "--> Could not locate required CUEW files - Please check ${CUEW_SEARCH_PATH}")
-+endif()
-+if (NOT BCD_FOUND)
-+	MESSAGE(FATAL_ERROR "--> Could not locate required BCD files - Please check ${BCD_SEARCH_PATH}")
-+endif()
-+if (NOT OPENSUBDIV_FOUND)
-+	MESSAGE(FATAL_ERROR "--> Could not locate required OPENSUBDIV files - Please check ${OPENSUBDIV_SEARCH_PATH}")
-+endif()
-+
- ################################################################################
- #
- # Build options
-@@ -169,7 +164,7 @@
- 	set(LUXCORE_LIBRARY luxcore)
- 	ADD_DEFINITIONS("-DLUXCORE_DLL")
- else()
--	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays opencolorio  ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${Python_LIBRARIES})
- endif()
- 
- ################################################################################
-diff -NurB a/samples/luxcoreconsole/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoreconsole/CMakeLists.txt
---- a/samples/luxcoreconsole/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
-+++ LuxCore-luxcorerender_v2.4/samples/luxcoreconsole/CMakeLists.txt	2020-08-31 23:56:38.304845858 +0200
-@@ -31,5 +31,5 @@
- if(APPLE)
- TARGET_LINK_LIBRARIES(luxcoreconsole expat "-framework Carbon" "-framework IOKit" ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
- else()
+-if(APPLE)
+-TARGET_LINK_LIBRARIES(luxcoreconsole expat "-framework Carbon" "-framework IOKit" ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
+-else()
 -TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${clew_LIBRARIES} ${Python_LIBRARIES})
- endif()
-diff -NurB a/samples/luxcoredemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoredemo/CMakeLists.txt
---- a/samples/luxcoredemo/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
-+++ LuxCore-luxcorerender_v2.4/samples/luxcoredemo/CMakeLists.txt	2020-08-31 20:09:22.292676077 +0200
-@@ -29,4 +29,4 @@
+-endif()
++TARGET_LINK_LIBRARIES(luxcoreconsole ${LUXCORE_LIBRARY} Boost::thread ${clew_LIBRARIES} )
+--- a/samples/luxcoredemo/CMakeLists.txt	2022-11-16 23:18:21.251344280 +0100
++++ LuxCore-luxcorerender_v2.6/samples/luxcoredemo/CMakeLists.txt	2022-11-18 17:15:02.842743967 +0100
+@@ -29,4 +29,5 @@
  add_executable(luxcoredemo ${LUXCORELIBDEMO_SRCS})
  add_definitions(${VISIBILITY_FLAGS})
  
 -TARGET_LINK_LIBRARIES(luxcoredemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${OPENCL_LIBRARIES} ${CUDA_ALL_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcoredemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${OPENCL_LIBRARIES} ${CUDA_ALL_LIBRARIES} ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${clew_LIBRARY} ${Python_LIBRARIES})
-diff -NurB a/samples/luxcorescenedemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcorescenedemo/CMakeLists.txt
---- a/samples/luxcorescenedemo/CMakeLists.txt	2020-08-31 13:11:18.687777533 +0200
-+++ LuxCore-luxcorerender_v2.4/samples/luxcorescenedemo/CMakeLists.txt	2020-08-31 20:13:29.401666083 +0200
++TARGET_LINK_LIBRARIES(luxcoredemo ${LUXCORE_LIBRARY} Boost::boost Boost::thread OpenCL::OpenCL OpenImageDenoise ${clew_LIBRARIES} ${CUDA_ALL_LIBRARIES} )
++
+--- a/samples/luxcorescenedemo/CMakeLists.txt	2022-11-16 23:18:21.251344280 +0100
++++ LuxCore-luxcorerender_v2.6/samples/luxcorescenedemo/CMakeLists.txt	2022-11-18 17:19:29.769734463 +0100
 @@ -29,4 +29,4 @@
  add_executable(luxcorescenedemo ${LUXCORESCENEDEMO_SRCS})
  add_definitions(${VISIBILITY_FLAGS})
  
 -TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES})
-+TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} ${Boost_LIBRARIES} ${clew_LIBRARY})
-diff -NurB a/samples/luxcoreui/CMakeLists.txt LuxCore-luxcorerender_v2.4/samples/luxcoreui/CMakeLists.txt
---- a/samples/luxcoreui/CMakeLists.txt	2022-08-19 23:39:01.753121314 +0200
-+++ LuxCore-luxcorerender_v2.6/samples/luxcoreui/CMakeLists.txt	2022-08-20 00:13:52.094163786 +0200
-@@ -18,16 +18,6 @@
- 
- #############################################################################
- #
--# GLFW library
--#
--#############################################################################
--
--add_subdirectory(deps/glfw-3.1.1)
--include_directories(deps/glfw-3.1.1/include)
--include_directories(deps/nfd/include)
--
--#############################################################################
--#
- # luxcore UI binary
++TARGET_LINK_LIBRARIES(luxcorescenedemo ${LUXCORE_LIBRARY} Boost::boost Boost::thread ${clew_LIBRARIES} ${BCD_Libraries} spdlog::spdlog OpenImageDenoise )
+--- a/samples/luxcoreui/CMakeLists.txt	2022-11-16 23:18:21.251344280 +0100
++++ LuxCore-luxcorerender_v2.6/samples/luxcoreui/CMakeLists.txt	2022-11-16 23:18:47.585343343 +0100
+@@ -32,7 +32,38 @@
  #
  #############################################################################
-@@ -62,33 +52,15 @@
- 	imgui_impl_glfw.cpp
- 	bake.cpp
- 	resources/luxlogo_bg.cpp
--	deps/imgui-1.46/imgui.cpp
--	deps/imgui-1.46/imgui_demo.cpp
--	deps/imgui-1.46/imgui_draw.cpp
--	deps/nfd/nfd_common.c
- 	)
  
--IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
--	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_win.cpp)
--ENDIF()
--
--IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
--	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_gtk.c)
--	add_definitions(${GTK3_CFLAGS_OTHER})
--ENDIF()
--
--IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
--	SET(LUXCOREUI_SRCS ${LUXCOREUI_SRCS} deps/nfd/nfd_cocoa.m)
--ENDIF()
--
- add_executable(luxcoreui ${LUXCOREUI_SRCS})
+-include_directories(deps/imgui-1.46)
++# glfw
++find_package(glfw3 REQUIRED)
++
++if (glfw3_FOUND)
++        include_directories(BEFORE SYSTEM ${glfw3_INCLUDE_DIR})
++endif ()
++
++#nativefiledialog-extended
++find_package(nativefiledialog-extended REQUIRED)
++
++
++# imgui
++find_package(PkgConfig REQUIRED)
++#include(FindPkgConfig)
++pkg_check_modules(imgui REQUIRED imgui)
++
++
++macro(print_all_variables)
++    message(STATUS "print_all_variables------------------------------------------{")
++    get_cmake_property(_variableNames VARIABLES)
++    foreach (_variableName ${_variableNames})
++        message(STATUS "${_variableName}=${${_variableName}}")
++    endforeach()
++    message(STATUS "print_all_variables------------------------------------------}")
++endmacro()
++
++print_all_variables()
++
++#if (imgui_FOUND)
++        include_directories(BEFORE SYSTEM ${imgui_INCLUDEDIR})
++#endif ()
++
  
- if(APPLE)
- 
+ set(LUXCOREUI_SRCS
+ 	luxcoreui.cpp
+@@ -96,6 +127,9 @@
+ else()
  TARGET_LINK_LIBRARIES(luxcoreui
  	glfw
--	expat
--	${GLFW_LIBRARIES}
-+	expat::expat
++	${imgui_LIBRARY_DIR}${imgui_LINK_LIBRARIES}
++	${nativefiledialog-extended_LIBRARIES}
++	OpenImageIO::OpenImageIO
+ 	${GLFW_LIBRARIES}
  	${LUXCORE_LIBRARY}
  	${OPENGL_LIBRARIES}
- 	${GTK3_LIBRARIES}
-diff -NurB a/src/luxcore/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxcore/CMakeLists.txt
---- a/src/luxcore/CMakeLists.txt	2020-08-31 13:11:18.676777534 +0200
-+++ LuxCore-luxcorerender_v2.4/src/luxcore/CMakeLists.txt	2020-08-31 23:44:03.454876387 +0200
-@@ -152,13 +152,11 @@
+--- a/sdk/CMakeLists.txt	2022-11-16 23:18:21.325344278 +0100
++++ LuxCore-luxcorerender_v2.6/sdk/CMakeLists.txt	2022-11-16 23:18:47.586343342 +0100
+@@ -33,9 +33,9 @@
+ # cmake does need to know which of the possible configurations
+ # to generate
+ if(NOT CMAKE_BUILD_TYPE)
+-	set(CMAKE_BUILD_TYPE Release)
++#_cmake_modify_IGNORE 	set(CMAKE_BUILD_TYPE Release)
+ endif(NOT CMAKE_BUILD_TYPE)
+-SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
++#_cmake_modify_IGNORE SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
+ 
+ message(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
+ 
+--- a/src/luxcore/CMakeLists.txt	2022-11-16 23:18:21.325344278 +0100
++++ LuxCore-luxcorerender_v2.6/src/luxcore/CMakeLists.txt	2022-11-18 17:26:16.331719987 +0100
+@@ -36,6 +36,8 @@
+ 
+ file(MAKE_DIRECTORY ${generated_header_dir})
+ 
++set(CMAKE_CXX_STANDARD 14)
++
+ configure_file(
+ 		"${LuxRays_SOURCE_DIR}/include/luxcore/cfg.h.in"
+ 		"${generated_header_dir}/cfg.h")
+@@ -152,13 +154,12 @@
  
  if (BUILD_LUXCORE_DLL)
  	add_library(luxcore SHARED ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
 -	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY} OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays fmt::fmt spdlog::spdlog ${BCD_LIBRARIES} OpenSubdiv::osdCPU OpenSubdiv::osdGPU ${OpenVDB_LIBRARIES} OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} embree OpenImageDenoise TBB::tbb TIFF::TIFF OpenEXR PNG::PNG JPEG::JPEG)
  else()
  	add_library(luxcore STATIC ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
++	target_link_libraries(luxcore PRIVATE slg-core slg-film slg-kernels luxrays fmt::fmt spdlog::spdlog ${BCD_LIBRARIES} OpenSubdiv::osdCPU OpenSubdiv::osdGPU ${OpenVDB_LIBRARIES} OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} embree OpenImageDenoise TBB::tbb TIFF::TIFF OpenEXR PNG::PNG JPEG::JPEG)
  endif()
  
 -include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
@@ -221,27 +120,33 @@ diff -NurB a/src/luxcore/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxcore/C
  add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
  link_directories (${SLG_LIB_DIR} ${LuxRays_LIB_DIR})
  
-@@ -175,15 +173,13 @@
+@@ -175,21 +176,11 @@
  
  add_library(pyluxcore MODULE ${PYLUXCORE_SRCS} ${LUXCORE_LIB_SRCS} ${LUX_PARSER_SRC})
  
 -include_directories(${LuxRays_SOURCE_DIR}/deps/openvdb-7.0.0)
 -include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/include)
- 
+-
  add_definitions(-DOPENVDB_STATICLIB ${VISIBILITY_FLAGS})
- if(APPLE)
- 	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio expat ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-     SET_TARGET_PROPERTIES(pyluxcore PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible
- else()
+-if(APPLE)
+-	target_link_libraries(pyluxcore -Wl,-undefined -Wl,dynamic_lookup slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio expat ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+-    SET_TARGET_PROPERTIES(pyluxcore PROPERTIES XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING NO) # exclude pylux from strip, not possible
+-else()
 -	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-+	target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES} ${BLOSC_LIBRARY}  OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
- endif()
+-endif()
++
++target_link_libraries(pyluxcore PRIVATE slg-core slg-film slg-kernels luxrays fmt::fmt spdlog::spdlog ${BCD_LIBRARIES} OpenSubdiv::osdCPU OpenSubdiv::osdGPU ${OpenVDB_LIBRARIES} OpenColorIO::OpenColorIO ${BLOSC_LIBRARY} embree OpenImageDenoise TBB::tbb TIFF::TIFF OpenEXR PNG::PNG JPEG::JPEG Python::Python)
  
  set_target_properties(pyluxcore PROPERTIES PREFIX "")
-diff -NurB a/src/luxrays/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxrays/CMakeLists.txt
---- a/src/luxrays/CMakeLists.txt	2020-08-31 13:11:18.677777534 +0200
-+++ LuxCore-luxcorerender_v2.4/src/luxrays/CMakeLists.txt	2020-08-31 13:11:34.870776879 +0200
-@@ -208,8 +203,6 @@
+-if(MSVC)
+-	set_target_properties(pyluxcore PROPERTIES SUFFIX ".pyd")
+-endif(MSVC)
+ 
+ ################################################################################
+ #
+--- a/src/luxrays/CMakeLists.txt	2022-11-16 23:18:21.325344278 +0100
++++ LuxCore-luxcorerender_v2.6/src/luxrays/CMakeLists.txt	2022-11-18 17:23:35.155725725 +0100
+@@ -208,8 +208,6 @@
  	${LuxRays_SOURCE_DIR}/src/luxrays/utils/thread.cpp
  	${LuxRays_SOURCE_DIR}/src/luxrays/utils/ply/rply.cpp
  	${LuxRays_SOURCE_DIR}/src/luxrays/utils/properties.cpp
@@ -250,10 +155,28 @@ diff -NurB a/src/luxrays/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/luxrays/C
  )
  SOURCE_GROUP("Source Files\\LuxRays Library" FILES ${LUXRAYS_SRCS})
  
-diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeLists.txt
---- a/src/slg/CMakeLists.txt	2020-08-31 13:11:18.678777534 +0200
-+++ LuxCore-luxcorerender_v2.4/src/slg/CMakeLists.txt	2020-08-31 13:11:34.869776879 +0200
-@@ -78,362 +78,13 @@
+@@ -278,8 +276,10 @@
+ add_library(luxrays STATIC ${LUXRAYS_LIB_SRCS})
+ add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
+ 
+-TARGET_LINK_LIBRARIES(luxrays ${OPENIMAGEIO_LIBRARIES})
+-TARGET_LINK_LIBRARIES(luxrays ${Boost_LIBRARIES})
++TARGET_LINK_LIBRARIES(luxrays OpenImageIO)
++TARGET_LINK_LIBRARIES(luxrays Boost::system Boost::filesystem Boost::iostreams)
++TARGET_LINK_LIBRARIES(luxrays ${cuew_LIBRARIES} ${clew_LIBRARIES} ${BCD_LIBRARIES})
++
+ if (WIN32)
+ # This is needed by Boost 1.67 but is not found automatically
+     TARGET_LINK_LIBRARIES(luxrays bcrypt.lib)
+--- a/src/slg/CMakeLists.txt	2022-11-16 23:18:21.328344277 +0100
++++ LuxCore-luxcorerender_v2.6/src/slg/CMakeLists.txt	2022-11-18 17:31:51.731708045 +0100
+@@ -73,390 +73,17 @@
+ endif(DOXYGEN_FOUND)
+ 
+ ###########################################################################
++set(CMAKE_CXX_STANDARD 14)
+ 
+ link_directories (${LuxRays_LIB_DIR})
  
  add_definitions(-DCPP_API_EXPORTS ${VISIBILITY_FLAGS}) # for controlling visibility
  
@@ -280,10 +203,10 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include/bcd/core)
 -include_directories(${LuxRays_SOURCE_DIR}/deps/eigen-3.3.4)
 -include_directories(${LuxRays_SOURCE_DIR}/deps/lut)
- 
- # Use only MPL licensed source code
- add_definitions("-DEIGEN_MPL2_ONLY")
- 
+-
+-# Use only MPL licensed source code
+-add_definitions("-DEIGEN_MPL2_ONLY")
+-
 -add_library(bcd STATIC ${BCD_SRCS})
 -
 -###########################################################################
@@ -383,9 +306,9 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
 -
 -include_directories(${LuxRays_SOURCE_DIR}/deps/opensubdiv-3.4.0)
 -
- # Required by VisualStudio to have M_PI defined
- add_definitions("-D_USE_MATH_DEFINES")
- 
+-# Required by VisualStudio to have M_PI defined
+-add_definitions("-D_USE_MATH_DEFINES")
+-
 -add_library(opensubdiv STATIC ${OPENSUBDIV_SRCS})
 -
 -###########################################################################
@@ -616,27 +539,258 @@ diff -NurB a/src/slg/CMakeLists.txt LuxCore-luxcorerender_v2.4/src/slg/CMakeList
  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
  	add_definitions("-DHAVE_GETRANDOM")
  	add_definitions("-DUSE_SSE")
-@@ -450,8 +101,6 @@
- 	add_definitions("-DUSE_SSE")
- endif(WIN32)
+ endif()
  
+-if(APPLE)
+-	add_definitions("-DHAVE_ARC4RANDOM_BUF")
+-	add_definitions("-DUSE_SSE")
+-endif(APPLE)
+-
+-if(WIN32)
+-	# Prevents __declspec(dllimport) on Windows
+-	add_definitions("-DOpenColorIO_SKIP_IMPORTS -DXML_STATIC")
+-	add_definitions("-DUSE_SSE")
+-endif(WIN32)
+-
 -add_library(opencolorio STATIC ${OPENCOLORIO_SRCS} ${YAMLCPP_SRCS} ${EXPAT_SRCS})
 -
- if(WIN32)
- 	# OCIO 2.0.0 is the only module not supporting -D_UNICODE
- 	target_compile_definitions(opencolorio PRIVATE "-D_MBCS")
-diff -NurB a/tests/luxcoreimplserializationdemo/CMakeLists.txt LuxCore-luxcorerender_v2.4/tests/luxcoreimplserializationdemo/CMakeLists.txt
---- a/tests/luxcoreimplserializationdemo/CMakeLists.txt	2020-09-01 00:49:39.377717204 +0200
-+++ LuxCore-luxcorerender_v2.4/tests/luxcoreimplserializationdemo/CMakeLists.txt	2020-09-01 00:52:40.928709862 +0200
-@@ -26,9 +26,6 @@
+-if(WIN32)
+-	# OCIO 2.0.0 is the only module not supporting -D_UNICODE
+-	target_compile_definitions(opencolorio PRIVATE "-D_MBCS")
+-endif(WIN32)
+-
+ ###########################################################################
+ #
+ # Kernel files
+@@ -861,6 +488,7 @@
+ 
+ add_library(slg-core STATIC ${SLG_CORE_SRCS})
+ 
++target_link_libraries(slg-core OpenImageIO::OpenImageIO Boost::serialization ${BCD_LIBRARIES} )
+ #############################################################################
+ #
+ # SLG Kernels library
+@@ -1069,6 +697,7 @@
+ SOURCE_GROUP("Source Files\\SLG Film Library" FILES ${SLG_FILM_SRCS})
+ 
+ add_library(slg-film STATIC ${SLG_FILM_SRCS})
++target_link_libraries(slg-film ${BCD_LIBRARIES} )
+ 
+ ###########################################################################
+ #
+--- a/tests/luxcoreimplserializationdemo/CMakeLists.txt	2022-11-16 23:18:21.337344277 +0100
++++ LuxCore-luxcorerender_v2.6/tests/luxcoreimplserializationdemo/CMakeLists.txt	2022-11-18 17:21:07.586730980 +0100
+@@ -26,9 +26,7 @@
  	luxcoreimplserializationdemo.cpp
  	)
  
 -include_directories(${LuxRays_SOURCE_DIR}/deps/bcd-1.1/include)
 -include_directories(${LuxRays_SOURCE_DIR}/deps/opencolorio-2.0.0/include)
--
+ 
  add_executable(luxcoreimplserializationdemo ${LUXCOREIMPL_SERIALIZATIONDEMO_SRCS})
  
 -TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
 \ No newline at end of file
-+TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${OPENSUBDIV_LIBRARIES} ${OpenVDB_LIBRARIES}  OpenColorIO::OpenColorIO  ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++TARGET_LINK_LIBRARIES(luxcoreimplserializationdemo luxcore slg-core slg-film slg-kernels luxrays Boost::thread fmt::fmt spdlog::spdlog ${BCD_LIBRARIES} OpenSubdiv::osdCPU OpenSubdiv::osdGPU ${OpenVDB_LIBRARIES} OpenColorIO ${BLOSC_LIBRARY} embree OpenImageIO::OpenImageIO TBB::tbb TIFF::TIFF OpenEXR PNG::PNG JPEG::JPEG)
+--- a/CMakeLists.txt	2022-11-16 23:18:21.170344283 +0100
++++ LuxCore-luxcorerender_v2.6/CMakeLists.txt	2022-11-18 16:06:54.619889530 +0100
+@@ -56,7 +56,7 @@
+ 	# For generators like make, cmake needs to know which variant to use
+ 	# so let's have a drop-down selector for it in the GUI:
+ 
+-	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build configuration")
++#_cmake_modify_IGNORE 	set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build configuration")
+ 	set_property(
+ 			CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${supported_build_variants})
+ 
+@@ -96,44 +96,10 @@
+ SET(LuxRays_INCLUDE_DIR "${LuxRays_SOURCE_DIR}/include")
+ include_directories("${LuxRays_INCLUDE_DIR}")
+ 
+-include_directories("${LuxRays_SOURCE_DIR}/deps/json-3.7.3/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/cuew/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/clew/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/optix-7.1.0/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/spdlog-1.8.0/include")
+-include_directories("${LuxRays_SOURCE_DIR}/deps/robin-hood-hashing-3.9.1/src/include")
+ 
+ # Find dependencies
+ include(Dependencies)
+ 
+-if (NOT Boost_FOUND)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required Boost files - Please check ${BOOST_SEARCH_PATH}")
+-endif()
+-
+-if (NOT OPENIMAGEIO_FOUND)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required OpenImageIO files - Please check ${OPENIMAGEIO_SEARCH_PATH}")
+-endif()
+-
+-if (NOT OPENGL_FOUND)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required OpenGL file")
+-endif()
+-
+-if (NOT EMBREE_FOUND)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required Intel Embree files - Please check ${EMBREE_SEARCH_PATH}")
+-endif()
+-
+-if (NOT OIDN_FOUND AND NOT LUXCORE_DISABLE_OIDN)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required Intel Oidn files - Please check ${OIDN_SEARCH_PATH}")
+-endif()
+-
+-if (NOT TBB_FOUND)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required Intel TBB files - Please check ${TBB_SEARCH_PATH}")
+-endif()
+-
+-if (NOT BLOSC_FOUND)
+-	MESSAGE(FATAL_ERROR "--> Could not locate required C-BLOSC files - Please check ${BLOSC_SEARCH_PATH}")
+-endif()
+-
+ ################################################################################
+ #
+ # Build options
+@@ -169,7 +135,7 @@
+ 	set(LUXCORE_LIBRARY luxcore)
+ 	ADD_DEFINITIONS("-DLUXCORE_DLL")
+ else()
+-	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays bcd opensubdiv openvdb opencolorio ${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++	set(LUXCORE_LIBRARY luxcore slg-core slg-film slg-kernels luxrays ${BCD_LIBRARIES} ${clew_LIBRARIES} OpenSubdiv::osdGPU OpenSubdiv::osdCPU ${OpenVDB_LIBRARIES} OpenColorIO ${BLOSC_LIBRARY} embree ${OIDN_LIBRARY} TBB::tbb TIFF::TIFF OpenEXR PNG::PNG JPEG::JPEG)
+ endif()
+ 
+ ################################################################################
+@@ -210,7 +176,7 @@
+ endif()
+ 
+ if(OPENGL_FOUND)
+-	add_subdirectory(samples/luxcoreui)
++#	add_subdirectory(samples/luxcoreui)
+ endif(OPENGL_FOUND)
+ 
+ 
+--- a/cmake/Dependencies.cmake	2022-11-16 23:18:21.170344283 +0100
++++ LuxCore-luxcorerender_v2.6/cmake/Dependencies.cmake	2022-11-18 17:34:57.836701418 +0100
+@@ -17,6 +17,10 @@
+ ################################################################################
+ 
+ include(FindPkgMacros)
++
++find_package(PkgConfig REQUIRED)
++
++
+ getenv_path(LuxRays_DEPENDENCIES_DIR)
+ 
+ ################################################################################
+@@ -28,33 +32,19 @@
+ # Find threading library
+ find_package(Threads REQUIRED)
+ 
++find_package(OpenColorIO REQUIRED)
+ find_package(OpenImageIO REQUIRED)
+-include_directories(BEFORE SYSTEM ${OPENIMAGEIO_INCLUDE_DIR})
++find_package(OpenVDB REQUIRED)
+ find_package(OpenEXR REQUIRED)
++find_package(OpenSubdiv REQUIRED)
+ 
+-if(NOT APPLE)
+-    # Apple has these available hardcoded and matched in macos repo, see Config_OSX.cmake
+-
+-    include_directories(BEFORE SYSTEM ${OPENEXR_INCLUDE_DIRS})
+-    find_package(TIFF REQUIRED)
+-    include_directories(BEFORE SYSTEM ${TIFF_INCLUDE_DIR})
+-    find_package(JPEG REQUIRED)
+-    include_directories(BEFORE SYSTEM ${JPEG_INCLUDE_DIR})
+-    find_package(PNG REQUIRED)
+-    include_directories(BEFORE SYSTEM ${PNG_PNG_INCLUDE_DIR})
+-	# Find Python Libraries
+-    if("${PYTHON_V}" EQUAL "27")
+-        find_package(PythonLibs 2.7)
+-    else()
+-        find_package(PythonLibs 3.4)
+-    endif()
+-endif()
+ 
+-find_program(PYSIDE_UIC NAMES pyside-uic pyside2-uic pyside6-uic
+-		HINTS "${PYTHON_INCLUDE_DIRS}/../Scripts"
+-		PATHS "c:/Program Files/Python${PYTHON_V}/Scripts")
++find_package(TIFF REQUIRED)
++find_package(JPEG REQUIRED)
++find_package(PNG REQUIRED)
+ 
+-include_directories(${PYTHON_INCLUDE_DIRS})
++# Find Python Libraries
++find_package (Python COMPONENTS Interpreter Development)
+ 
+ # Find Boost
+ set(Boost_USE_STATIC_LIBS       ON)
+@@ -94,43 +84,38 @@
+ 
+ 
+ # OpenGL
+-find_package(OpenGL)
++find_package(OpenGL REQUIRED)
+ 
+-if (OPENGL_FOUND)
+-	include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_PATH})
+-endif ()
++# OpenC/usr/share/cuew/cmake/cuewConfig.cmakeL
++find_package(OpenCL REQUIRED)
+ 
+-# Intel Embree
+-set(EMBREE_ROOT                "${EMBREE_SEARCH_PATH}")
+-find_package(Embree REQUIRED)
++# clew
++find_package(clew REQUIRED)
+ 
+-if (EMBREE_FOUND)
+-	include_directories(BEFORE SYSTEM ${EMBREE_INCLUDE_PATH})
+-endif ()
++# cuew
++find_package(cuew REQUIRED)
+ 
+-# Intel Oidn
+-set(OIDN_ROOT                "${OIDN_SEARCH_PATH}")
+-find_package(Oidn REQUIRED)
++# cuew
++find_package(bcd REQUIRED)
+ 
+-if (OIDN_FOUND)
+-	include_directories(BEFORE SYSTEM ${OIDN_INCLUDE_PATH})
+-endif ()
++# Intel Embree
++find_package(Embree 3 REQUIRED)
++
++# Intel Oidn
++find_package(OpenImageDenoise REQUIRED)
+ 
+ # Intel TBB
+-set(TBB_ROOT                   "${TBB_SEARCH_PATH}")
+ find_package(TBB REQUIRED)
+ 
+-if (TBB_FOUND)
+-	include_directories(BEFORE SYSTEM ${TBB_INCLUDE_PATH})
+-endif ()
++#find_package(Blosc REQUIRED)
++ 
++# fmt
++find_package(fmt REQUIRED)
+ 
+-# Blosc
+-set(BLOSC_ROOT                   "${BLOSC_SEARCH_PATH}")
+-find_package(Blosc REQUIRED)
++# spdlog
++find_package(spdlog REQUIRED)
+ 
+-if (BLOSC_FOUND)
+-	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
+-endif ()
++pkg_check_modules(blosc REQUIRED)
+ 
+ # OpenMP
+ if(NOT APPLE)
+@@ -146,7 +131,6 @@
+ 
+ # Find GTK 3.0 for Linux only (required by luxcoreui NFD)
+ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+-	find_package(PkgConfig REQUIRED)
+ 	pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+ 	include_directories(${GTK3_INCLUDE_DIRS})
+ endif()

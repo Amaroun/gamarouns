@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=7
+EAPI=8
 
 inherit cmake flag-o-matic
 
@@ -51,23 +51,18 @@ DEPEND="${RDEPEND}"
 
 
 PATCHES+=(
-	"${FILESDIR}/${PN}-${PV}_python.patch"
-	"${FILESDIR}/${PN}-2.4_system_deps.patch"
+	"${FILESDIR}/${P}_system_deps.patch"
+	"${FILESDIR}/${P}_code_updates.patch"
         )
 
 src_prepare() {
 
-	rm -r "${S}/deps"
-	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
-	cp "${FILESDIR}/FindOpenSubdiv.cmake" "${S}/cmake"
-
-#	if use shared ; then
-#		PATCHES+=(
-#			"${FILESDIR}/${PN}_build_shared.patch"
-#		)
-#	fi
-
 	cmake_src_prepare
+
+	rm -r "${S}/deps"
+	rm -r "${S}/samples/luxcoreui/deps"
+	rm -r "${S}/cmake/Packages"
+	cp -r "${FILESDIR}/Packages" "${S}/cmake/"
 
 }
 src_configure() {

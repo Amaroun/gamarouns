@@ -1,0 +1,43 @@
+--- a/src/luxrays/utils/ocl.cpp	2022-11-16 23:18:21.327344277 +0100
++++ LuxCore-luxcorerender_v2.6/src/luxrays/utils/ocl.cpp	2022-11-17 00:18:11.540216446 +0100
+@@ -27,6 +27,7 @@
+ 
+ #include "luxrays/luxrays.h"
+ #include "luxrays/utils/utils.h"
++#include "luxrays/utils/serializationutils.h"
+ #include "luxrays/utils/oclerror.h"
+ #include "luxrays/utils/oclcache.h"
+ #include "luxrays/utils/config.h"
+--- a/src/slg/engines/bakecpu/bakecputhread.cpp	2022-11-16 23:18:21.329344277 +0100
++++ LuxCore-luxcorerender_v2.6/src/slg/engines/bakecpu/bakecputhread.cpp	2022-11-17 00:23:16.967205571 +0100
+@@ -356,7 +356,7 @@
+ 	const PathTracer &pathTracer = engine->pathTracer;
+ 	
+ 	const PathTracer::ConnectToEyeCallBackType connectToEyeCallBack = boost::bind(
+-			&BakeCPURenderThread::RenderConnectToEyeCallBack, this, mapInfo, _1, _2, _3, _4, _5);
++			&BakeCPURenderThread::RenderConnectToEyeCallBack, this, mapInfo, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4, boost::placeholders::_5);
+ 
+ 	pathTracer.RenderLightSample(state.device, state.scene, state.film, state.lightSampler,
+ 			state.lightSampleResults, connectToEyeCallBack);
+--- a/include/slg/imagemap/imagemap.h	2022-11-16 23:18:21.240344281 +0100
++++ LuxCore-luxcorerender_v2.6/include/slg/imagemap/imagemap.h	2022-11-17 00:03:11.476248493 +0100
+@@ -19,7 +19,7 @@
+ #ifndef _SLG_IMAGEMAP_H
+ #define	_SLG_IMAGEMAP_H
+ 
+-#include <OpenEXR/half.h>
++#include <Imath/half.h>
+ 
+ #include <string>
+ #include <limits>
+--- a/include/slg/utils/halfserialization.h	2022-11-16 23:18:21.245344280 +0100
++++ LuxCore-luxcorerender_v2.6/include/slg/utils/halfserialization.h	2022-11-17 00:19:48.294213001 +0100
+@@ -19,7 +19,7 @@
+ #ifndef _SLG_HALFSERIALIZATION_H
+ #define	_SLG_HALFSERIALIZATION_H
+ 
+-#include <OpenEXR/half.h>
++#include <Imath/half.h>
+ 
+ #include "luxrays/utils/utils.h"
+ #include "luxrays/utils/serializationutils.h"

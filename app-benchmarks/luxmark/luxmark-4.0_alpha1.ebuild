@@ -48,12 +48,7 @@ DEPEND="${RDEPEND}
 	"
 
 PATCHES+=(
-	"${FILESDIR}/${PN}-4_cmake_python.patch"
-	"${FILESDIR}/${PN}-4_opencl.patch"
-	"${FILESDIR}/${PN}_system_deps.patch"
-	"${FILESDIR}/${PN}_autogen.patch"
-	"${FILESDIR}/${PN}-4_openclhpp.patch"
-	"${FILESDIR}/${PN}-4_clew.patch"
+	"${FILESDIR}/${P}_system_deps.patch"
 	)
 
 src_prepare() {
@@ -62,8 +57,9 @@ src_prepare() {
 #	else
 #		PATCHES+=( "${FILESDIR}/${P}_luxcorerender_static.patch" )
 #	fi
-	rm "${S}/cmake/Packages/FindOpenCL.cmake"
-	cp "${FILESDIR}/FindOpenVDB.cmake" "${S}/cmake"
+	rm -r "${S}/cmake/Packages"
+	cp -r "${FILESDIR}/Packages" "${S}/cmake"
+
 	cmake_src_prepare
 
 }
@@ -80,15 +76,11 @@ src_configure() {
         fi
 	BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
 	einfo "Boost python versions: $BoostPythons "
-	mycmakeargs=( -DPythonVersions="${BoostPythons}")
+	mycmakeargs=( "-DPythonVersions=${BoostPythons}")
 
-	local mycmakeargs="-DCMAKE_AUTOMOC=OFF"
-	mycmakeargs=("${mycmakeargs}
-		  -DLUX_DOCUMENTATION=OFF
-		  -DCMAKE_INSTALL_PREFIX=/usr")
-	! use opencl && mycmakeargs+=("${mycmakeargs}
-		  -DLUXRAYS_DISABLE_OPENCL=ON")
-	mycmakeargs+=("-DPYTHON_V=36")
+	mycmakeargs+=("-DCMAKE_AUTOMOC=OFF")
+	mycmakeargs+=("-DCMAKE_INSTALL_PREFIX=/usr")
+	use opencl || mycmakeargs+=("-DLUXRAYS_DISABLE_OPENCL=ON")
 	cmake_src_configure
 }
 

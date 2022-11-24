@@ -1,0 +1,264 @@
+--- LuxMark-luxmark_v4.0alpha1/CMakeLists.txt	2020-11-18 15:02:08.000000000 +0100
++++ b/CMakeLists.txt	2022-11-20 16:25:06.822812955 +0100
+@@ -72,9 +72,9 @@
+ # cmake does need to know which of the possible configurations
+ # to generate
+ if(NOT CMAKE_BUILD_TYPE)
+-	set(CMAKE_BUILD_TYPE Release)
++#_cmake_modify_IGNORE 	set(CMAKE_BUILD_TYPE Release)
+ endif(NOT CMAKE_BUILD_TYPE)
+-SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
++#_cmake_modify_IGNORE SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "assure config" FORCE) # makes sure type is shown in cmake gui
+ 
+ message(STATUS "Building mode: " ${CMAKE_BUILD_TYPE})
+ 
+@@ -98,33 +98,8 @@
+ ENDIF(LUXMARK_CUSTOM_CONFIG)
+ 
+ 
+-    # Find dependencies
+-    include(Dependencies)
+-
+-    if (NOT Boost_FOUND)
+-        MESSAGE(FATAL_ERROR "--> Could not locate required Boost files - Please check ${BOOST_SEARCH_PATH}")
+-    endif()
+-
+-    if (NOT OPENIMAGEIO_FOUND)
+-        MESSAGE(FATAL_ERROR "--> Could not locate required OpenImageIO files - Please check ${OPENIMAGEIO_SEARCH_PATH}")
+-    endif()
+-
+-    if (NOT EMBREE_FOUND)
+-        MESSAGE(FATAL_ERROR "--> Could not locate required Intel Embree files - Please check ${EMBREE_SEARCH_PATH}")
+-    endif()
+-
+-    if (NOT OIDN_FOUND)
+-        MESSAGE(FATAL_ERROR "--> Could not locate required Intel Oidn files - Please check ${OIDN_SEARCH_PATH}")
+-    endif()
+-
+-    if (NOT TBB_FOUND)
+-        MESSAGE(FATAL_ERROR "--> Could not locate required Intel TBB files - Please check ${TBB_SEARCH_PATH}")
+-    endif()
+-
+-    if (NOT BLOSC_FOUND)
+-        MESSAGE(FATAL_ERROR "--> Could not locate required C-BLOSC files - Please check ${BLOSC_SEARCH_PATH}")
+-    endif()
+-
++# Find dependencies
++include(Dependencies)
+ 
+ ###########################################################################
+ #
+--- LuxMark-luxmark_v4.0alpha1/src/CMakeLists.txt	2020-11-18 15:02:08.000000000 +0100
++++ b/src/CMakeLists.txt	2022-11-20 16:25:06.819812955 +0100
+@@ -114,7 +114,7 @@
+ 
+ ADD_EXECUTABLE(luxmark WIN32 ${LUXMARK_SRCS})
+ 
+-TARGET_LINK_LIBRARIES(luxmark ${ALL_LUXCORE_LIBRARIES} ${Boost_LIBRARIES} ${Qt5_LIBRARIES} ${OPENGL_gl_LIBRARY} ${CMAKE_DL_LIBS})
++TARGET_LINK_LIBRARIES(luxmark ${ALL_LUXCORE_LIBRARIES} ${Boost_LIBRARIES} ${Qt5_LIBRARIES} OpenGL::GL ${BCD_LIBRARIES} OpenSubdiv::osdCPU OpenSubdiv::osdGPU ${CMAKE_DL_LIBS})
+ 
+ if (WIN32)
+ 	# This is needed by Boost 1.67 but is not found automatically
+--- LuxMark-luxmark_v4.0alpha1/cmake/Dependencies.cmake	2020-11-18 15:02:08.000000000 +0100
++++ b/cmake/Dependencies.cmake	2022-11-20 16:25:06.815812956 +0100
+@@ -25,33 +25,77 @@
+ #######################################################################
+ # Core dependencies
+ #######################################################################
+-
++find_package(PkgConfig)
+ # Find threading library
+ find_package(Threads REQUIRED)
+ 
+ find_package(OpenImageIO REQUIRED)
+-include_directories(BEFORE SYSTEM ${OPENIMAGEIO_INCLUDE_DIR})
++find_package(OpenColorIO REQUIRED)
+ find_package(OpenEXR REQUIRED)
++find_package(OpenVDB REQUIRED)
++find_package(OpenSubdiv REQUIRED)
++
++find_package(BCD REQUIRED)
++
++find_package(TIFF REQUIRED)
++find_package(JPEG REQUIRED)
++find_package(PNG REQUIRED)
++find_package(fmt REQUIRED)
++find_package(spdlog REQUIRED)
++find_package(clew REQUIRED)
++
++set(PythonVersions "" CACHE STRING "Eglible python versions") 
++
++function(TestPythonVersion TestVersion)
++        message(STATUS "Testing PythonVersion ${TestVersion}")
++        find_package(Python ${TestVersion} EXACT COMPONENTS Interpreter Development)
++        if(NOT ${Python_FOUND})
++                set(PythonVersionEgligible OFF PARENT_SCOPE)
++                return()
++        endif()
++# Find Boost
++set(Boost_USE_STATIC_LIBS	OFF)
++set(Boost_USE_MULTITHREADED     ON)
++set(Boost_USE_STATIC_RUNTIME    OFF)
++set(BOOST_ROOT                  "${BOOST_SEARCH_PATH}")
++#set(Boost_DEBUG                 ON)
++set(Boost_MINIMUM_VERSION	"1.44.0")
+ 
+-if(NOT APPLE)
+-    # Apple has these available hardcoded and matched in macos repo, see Config_OSX.cmake
+ 
+-    include_directories(BEFORE SYSTEM ${OPENEXR_INCLUDE_DIRS})
+-    find_package(TIFF REQUIRED)
+-    include_directories(BEFORE SYSTEM ${TIFF_INCLUDE_DIR})
+-    find_package(JPEG REQUIRED)
+-    include_directories(BEFORE SYSTEM ${JPEG_INCLUDE_DIR})
+-    find_package(PNG REQUIRED)
+-    include_directories(BEFORE SYSTEM ${PNG_PNG_INCLUDE_DIR})
+-	# Find Python Libraries
+-    if("${PYTHON_V}" EQUAL "27")
+-        find_package(PythonLibs 2.7)
+-    else()
+-        find_package(PythonLibs 3.4)
+-    endif()
++set(LUXRAYS_BOOST_COMPONENTS thread program_options filesystem serialization iostreams regex system "python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}")
++find_package(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${LUXRAYS_BOOST_COMPONENTS})
++if (NOT Boost_FOUND)
++        # Try again with the other type of libs
++        if(Boost_USE_STATIC_LIBS)
++                set(Boost_USE_STATIC_LIBS OFF)
++        else()
++                set(Boost_USE_STATIC_LIBS ON)
++        endif()
++        find_package(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${LUXRAYS_BOOST_COMPONENTS})
+ endif()
++        if(NOT ${Boost_FOUND})
++                set(PythonVersionEligible OFF PARENT_SCOPE)
++                return()
++        endif()
++        set(PythonVersionEligible ON PARENT_SCOPE)
++
++endfunction()
++
++list(SORT PythonVersions COMPARE NATURAL ORDER DESCENDING)
++message(STATUS "PythonsVersions: ${PythonVersions}")
++foreach(PythonVersionCandidate IN LISTS PythonVersions )
++	if("X${PythonVersionCandidate}" STREQUAL "X")
++		continue()
++	endif()
++	message(STATUS "PythonsVersionCandidate: ${PythonVersionCandidate}")
++	TestPythonVersion("${PythonVersionCandidate}")
++	if(${PythonVersionEligible})
++		find_package(Python ${PythonVersionCandidate} EXACT COMPONENTS Interpreter Development python${Python_VERSION_MAJOR}${Python_VERSION_MINOR} chrono serialization  numpy${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
++		message(STATUS "Going with Python ${PythonVersionCandidate}")
++		break()
++	endif()
++endforeach()
+ 
+-include_directories(${PYTHON_INCLUDE_DIRS})
+ 
+ # Find Boost
+ set(Boost_USE_STATIC_LIBS       OFF)
+@@ -63,7 +107,7 @@
+ 
+ # For Windows builds, PYTHON_V must be defined as "3x" (x=Python minor version, e.g. "35")
+ # For other platforms, specifying python minor version is not needed
+-set(LUXRAYS_BOOST_COMPONENTS thread program_options filesystem serialization iostreams regex system python${PYTHON_V} chrono serialization numpy${PYTHON_V})
++set(LUXRAYS_BOOST_COMPONENTS thread program_options filesystem serialization iostreams regex system python${Python_VERSION_MAJOR}${Python_VERSION_MINOR} chrono serialization numpy${Python_VERSION_MAJOR}${Python_VERSION_MINOR})
+ find_package(Boost ${Boost_MINIMUM_VERSION} COMPONENTS ${LUXRAYS_BOOST_COMPONENTS})
+ if (NOT Boost_FOUND)
+         # Try again with the other type of libs
+@@ -91,43 +135,15 @@
+ 
+ 
+ # OpenGL
+-find_package(OpenGL)
+-
+-if (OPENGL_FOUND)
+-	include_directories(BEFORE SYSTEM ${OPENGL_INCLUDE_PATH})
+-endif()
+-
++find_package(OpenGL REQUIRED)
+ # Intel Embree
+-set(EMBREE_ROOT                "${EMBREE_SEARCH_PATH}")
+-find_package(Embree REQUIRED)
+-
+-if (EMBREE_FOUND)
+-	include_directories(BEFORE SYSTEM ${EMBREE_INCLUDE_PATH})
+-endif ()
+-
++find_package(Embree 3 REQUIRED)
+ # Intel Oidn
+-set(OIDN_ROOT                "${OIDN_SEARCH_PATH}")
+-find_package(Oidn REQUIRED)
+-
+-if (OIDN_FOUND)
+-	include_directories(BEFORE SYSTEM ${ODIN_INCLUDE_PATH})
+-endif ()
+-
+-# Intel TBB
+-set(TBB_ROOT                   "${TBB_SEARCH_PATH}")
++find_package(OpenImageDenoise REQUIRED)
+ find_package(TBB REQUIRED)
+-
+-if (TBB_FOUND)
+-	include_directories(BEFORE SYSTEM ${TBB_INCLUDE_PATH})
+-endif ()
+-
+ # Blosc
+-set(BLOSC_ROOT                   "${BLOSC_SEARCH_PATH}")
+-find_package(Blosc REQUIRED)
+-
+-if (BLOSC_FOUND)
+-	include_directories(BEFORE SYSTEM ${BLOSC_INCLUDE_PATH})
+-endif ()
++#find_package(Blosc REQUIRED)
++pkg_check_modules(blosc REQUIRED)
+ 
+ # OpenMP
+ if(NOT APPLE)
+@@ -142,10 +158,9 @@
+ endif()
+ 
+ set(Qt5_MODULES Widgets Network)
+-FIND_PACKAGE(Qt5 5.9.5 COMPONENTS ${Qt5_MODULES})
+-IF(NOT Qt5_FOUND)
+-  message(FATAL_ERROR "Is env variable Qt5_DIR set correctly? Currently: $Qt5_DIR")
+-ENDIF()
++find_package(Qt5 COMPONENTS ${Qt5_MODULES} REQUIRED)
++set(CMAKE_AUTOUIC ON)
++
+ foreach(comp ${Qt5_MODULES})
+     set(Qt5_LIBRARIES ${Qt5_LIBRARIES} Qt5::${comp})
+ endforeach()
+@@ -179,9 +194,9 @@
+ 
+ FIND_PATH(LUXCORE_INCLUDE_DIRS NAMES luxcore/luxcore.h PATHS ../luxrays/include ${LuxRays_HOME}/include)
+ FIND_PATH(LUXCORE_INCLUDE_CFG_DIRS NAMES luxcore/cfg.h PATHS ../luxrays/include ${LuxRays_HOME}/generated/include)
+-FIND_LIBRARY(OPENVDB_LIBRARY openvdb PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
+-FIND_LIBRARY(OPENSUBDIV_LIBRARY opensubdiv PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
+-FIND_LIBRARY(BCD_LIBRARY bcd PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
++#FIND_LIBRARY(OPENVDB_LIBRARY openvdb PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
++#FIND_LIBRARY(OPENSUBDIV_LIBRARY opensubdiv PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
++#FIND_LIBRARY(BCD_LIBRARY bcd PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
+ FIND_LIBRARY(SLG_LIBRARY_CORE slg-core PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
+ FIND_LIBRARY(SLG_LIBRARY_FILM slg-film PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
+ FIND_LIBRARY(SLG_LIBRARY_KERNELS slg-kernels PATHS ${LuxRays_HOME}/lib ../luxrays/lib PATH_SUFFIXES "" release relwithdebinfo minsizerel dist)
+@@ -193,9 +208,9 @@
+ 
+ IF (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
+ 	SET(ALL_LUXCORE_LIBRARIES ${LUXCORE_LIBRARY} ${SLG_LIBRARY_CORE} ${SLG_LIBRARY_FILM} ${SLG_LIBRARY_KERNELS} ${LUXRAYS_LIBRARY}
+-		${BCD_LIBRARY} ${OPENVDB_LIBRARY} ${OPENSUBDIV_LIBRARY} ${OPENIMAGEIO_LIBRARIES}
+-		${BLOSC_LIBRARY} ${EMBREE_LIBRARY} ${OIDN_LIBRARY} ${TBB_LIBRARY} ${TIFF_LIBRARIES}
+-		${OPENEXR_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
++		${BCD_LIBRARIES} ${OpenVDB_LIBRARIES} OpenSubdiv::osdCPU OpenSubdiv::osdGPU OpenImageIO::OpenImageIO 
++		${BLOSC_LIBRARY} embree OpenImageDenoise TBB::tbb TIFF::TIFF OpenColorIO::OpenColorIO Python::Python fmt::fmt spdlog::spdlog
++		OpenEXR::OpenEXR PNG::PNG JPEG::JPEG ${clew_LIBRARIES})
+ 
+ 	MESSAGE(STATUS "LuxCore include directory: " ${LUXCORE_INCLUDE_DIRS})
+ 	MESSAGE(STATUS "LuxCore config include directory: " ${LUXCORE_INCLUDE_CFG_DIRS})
+@@ -204,4 +219,4 @@
+ 	INCLUDE_DIRECTORIES(SYSTEM ${LUXCORE_INCLUDE_DIRS} ${LUXCORE_INCLUDE_CFG_DIRS})
+ ELSE (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
+ 	MESSAGE(FATAL_ERROR "LuxCore Library not found.")
+-ENDIF (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
+\ No newline at end of file
++ENDIF (LUXCORE_INCLUDE_DIRS AND LUXCORE_LIBRARY)
