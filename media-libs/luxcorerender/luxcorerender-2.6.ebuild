@@ -31,12 +31,14 @@ IUSE="debug opencl cuda shared"
 
 REQUIRED_USE="debug? ( shared )"
 
-RDEPEND=">=dev-libs/boost-1.63:=
+RDEPEND="dev-libs/boost:=
 	media-gfx/openvdb
 	dev-cpp/json
+	dev-cpp/robin-hood-hashing
 	dev-libs/c-blosc
 	dev-libs/clew
 	dev-libs/cuew
+	dev-libs/spdlog
 	media-libs/bcd
 	media-libs/embree
 	media-libs/lut
