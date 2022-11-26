@@ -26,7 +26,7 @@ IUSE="debug luxcoreui opencl opengl openmp python samples shared"
 
 REQUIRED_USE="debug? ( shared )"
 
-RDEPEND="dev-libs/boost:=
+RDEPEND="dev-libs/boost:=[numpy]
 	media-libs/openimageio
 	media-libs/openexr
 	media-libs/embree

@@ -31,7 +31,7 @@ IUSE="debug opencl cuda shared"
 
 REQUIRED_USE="debug? ( shared )"
 
-RDEPEND="dev-libs/boost:=
+RDEPEND="dev-libs/boost:=[numpy]
 	media-gfx/openvdb
 	dev-cpp/json
 	dev-cpp/robin-hood-hashing

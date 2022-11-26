@@ -43,7 +43,7 @@ src_configure() {
 local mycmakeargs=(
 		-DCMAKE_POSITION_INDEPENDENT_CODE=True
 		-DBCD_BUILD_GUI=OFF
-		-DBCD_BUILD_GUI=OFF
+		-DBCD_USE_CUDA=OFF
 	)
 	cmake_src_configure
 }
