@@ -1,0 +1,88 @@
+diff -Nurb a/CMakeLists.txt libdatachannel-0.17.12/CMakeLists.txt
+--- a/CMakeLists.txt	2022-11-30 13:49:55.195180155 +0100
++++ libdatachannel-0.17.12/CMakeLists.txt	2022-11-30 13:53:43.812711074 +0100
+@@ -17,6 +17,8 @@
+ option(CAPI_STDCALL "Set calling convention of C API callbacks stdcall" OFF)
+ option(SCTP_DEBUG "Enable SCTP debugging output to verbose log" OFF)
+ 
++INCLUDE(GNUInstallDirs)
++
+ if(USE_GNUTLS)
+ 	option(USE_NETTLE "Use Nettle in libjuice" ON)
+ else()
+@@ -201,24 +203,7 @@
+ find_package(Threads REQUIRED)
+ 
+ set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+-add_subdirectory(deps/plog EXCLUDE_FROM_ALL)
+-
+-if(SCTP_DEBUG)
+-	add_definitions(-DSCTP_DEBUG)
+-endif()
+-option(sctp_build_shared_lib OFF)
+-option(sctp_build_programs OFF)
+-option(sctp_inet OFF)
+-option(sctp_inet6 OFF)
+ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+-add_subdirectory(deps/usrsctp EXCLUDE_FROM_ALL)
+-if (MSYS OR MINGW)
+-	target_compile_definitions(usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
+-endif()
+-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+-    target_compile_options(usrsctp PRIVATE -Wno-error=format-truncation)
+-endif()
+-add_library(Usrsctp::Usrsctp ALIAS usrsctp)
+ 
+ add_library(datachannel SHARED
+ 	${LIBDATACHANNEL_SOURCES}
+@@ -239,13 +224,17 @@
+ 	VERSION ${PROJECT_VERSION}
+ 	CXX_STANDARD 17)
+ 
++find_package(PkgConfig REQUIRED)
++pkg_check_modules(usrsctp REQUIRED IMPORTED_TARGET usrsctp)
++find_package(plog REQUIRED)
++
+ target_include_directories(datachannel PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+     $<INSTALL_INTERFACE:include>)
+ target_include_directories(datachannel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/rtc)
+ target_include_directories(datachannel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+ target_link_libraries(datachannel PRIVATE Threads::Threads)
+-target_link_libraries(datachannel PRIVATE Usrsctp::Usrsctp plog::plog)
++target_link_libraries(datachannel PRIVATE PkgConfig::usrsctp plog::plog)
+ 
+ target_include_directories(datachannel-static PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+@@ -253,7 +242,7 @@
+ target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/rtc)
+ target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+ target_link_libraries(datachannel-static PRIVATE Threads::Threads)
+-target_link_libraries(datachannel-static PRIVATE Usrsctp::Usrsctp plog::plog)
++target_link_libraries(datachannel-static PRIVATE PkgConfig::usrsctp plog::plog)
+ 
+ if(WIN32)
+ 	target_link_libraries(datachannel PUBLIC ws2_32) # winsock2
+@@ -391,9 +380,9 @@
+ endif()
+ 
+ install(TARGETS datachannel EXPORT LibDataChannelTargets
+-	RUNTIME DESTINATION bin
+-	LIBRARY DESTINATION lib
+-	ARCHIVE DESTINATION lib
++	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ )
+ 
+ install(FILES ${LIBDATACHANNEL_HEADERS}
+@@ -466,8 +455,7 @@
+ 
+ # Examples
+ if(NOT NO_EXAMPLES)
+-	set(JSON_BuildTests OFF CACHE INTERNAL "")
+-	add_subdirectory(deps/json EXCLUDE_FROM_ALL)
++	find_package(nlohmann_json REQUIRED)
+ 
+ 	if(NOT NO_WEBSOCKET)
+ 		add_subdirectory(examples/client)
