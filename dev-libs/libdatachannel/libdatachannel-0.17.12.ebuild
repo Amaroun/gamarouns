@@ -21,6 +21,7 @@ RDEPEND="
 	net-libs/libsrtp
 	net-libs/usrsctp
 	nice? ( net-libs/libnice )
+	juice? ( net-libs/libjuice )
 	gnutls? ( net-libs/gnutls )
 	openssl? ( dev-libs/openssl )
 	tests? ( dev-cpp/json )
@@ -45,7 +46,7 @@ src_configure() {
         use gnutls && mycmakeargs+=("-DUSE_GNUTLS=ON")
         use openssl && mycmakeargs+=("-DUSE_GNUTLS=OFF")
         use nice   && mycmakeargs+=("-DUSE_NICE=ON")
-        use juice  && mycmakeargs+=("-DUSE_NICS=OFF")
+        use juice  && mycmakeargs+=("-DUSE_NICE=OFF")
         use websocket || mycmakeargs+=("-DNO_WEBSOCKET=ON")
         use media || mycmakeargs+=("-DNO_MEDIA=ON")
         use examples || mycmakeargs+=("-DNO_EXAMPLES=ON")

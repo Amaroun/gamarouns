@@ -1,0 +1,25 @@
+diff -NurB a/CMakeLists.txt libjuice-1.0.6/CMakeLists.txt
+--- a/CMakeLists.txt	2022-12-01 09:49:03.420938031 +0100
++++ libjuice-1.0.6/CMakeLists.txt	2022-12-01 10:22:40.375866216 +0100
+@@ -4,6 +4,8 @@
+ 	LANGUAGES C)
+ set(PROJECT_DESCRIPTION "UDP Interactive Connectivity Establishment (ICE) library")
+ 
++include(GNUInstallDirs)
++
+ option(USE_NETTLE "Use Nettle for hash functions" OFF)
+ option(NO_SERVER "Disable server support" OFF)
+ option(NO_TESTS "Disable tests build" OFF)
+@@ -144,9 +146,9 @@
+ add_library(LibJuice::LibJuiceStatic ALIAS juice-static)
+ 
+ install(TARGETS juice EXPORT LibJuiceTargets
+-	RUNTIME DESTINATION bin
+-	LIBRARY DESTINATION lib
+-	ARCHIVE DESTINATION lib
++       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+ )
+ 
+ install(FILES ${LIBJUICE_HEADERS} DESTINATION include/juice)
