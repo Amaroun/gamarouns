@@ -59,9 +59,6 @@ src_configure() {
 		append-flags -ggdb
         fi
 
-	local mycmakeargs=""
-	mycmakeargs+=("-DLUX_DOCUMENTATION=OFF"
-		  "-DCMAKE_INSTALL_PREFIX=/usr")
         if use opencl ; then
                 append-cppflags -DCL_HPP_CL_2_2_DEFAULT_BUILD -DCL_HPP_TARGET_OPENCL_VERSION=220 -DCL_HPP_MINIMUM_OPENCL_VERSION=220
         else
@@ -70,7 +67,9 @@ src_configure() {
 
         BoostPythons="$(equery u boost | grep -e 'python_targets_python[[:digit:]]_[[:digit:]]' | tr '\n' ';' | sed  -e 's/\([[:digit:]]\+\)_\([[:digit:]]\+\)/\1.\2/g'  -e 's/[+_\-]\+//g' -e 's;[[:alpha:]]\+;;g')"
         einfo "Boost python versions: $BoostPythons "
-        mycmakeargs+=( "-DPythonVersions=${BoostPythons}")
+        mycmakeargs+=( -DPythonVersions="${BoostPythons}")
+
+	mycmakeargs+=( -DLUX_DOCUMENTATION=OFF)
 
 	cmake_src_configure
 }

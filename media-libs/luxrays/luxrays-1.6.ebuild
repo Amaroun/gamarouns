@@ -110,7 +110,7 @@ src_configure() {
 	)
 
 	mycmakeargs+=( -DPythonVersions="${BoostPythons}")
-	use opencl || mycmakeargs=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev -DPythonVersions="${BoostPythons}")
+	use opencl || mycmakeargs=( -DLUXRAYS_DISABLE_OPENCL=ON -Wno-dev)
 	cmake_src_configure
 }
 
