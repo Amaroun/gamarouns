@@ -23,7 +23,8 @@ else
 	SRC_URI="https://github.com/vlc-qt/vlc-qt/archive/${PV}.tar.gz -> ${P}.tar.gz"
 fi
 
-RDEPEND=">=dev-qt/qtcore-5.5
+RDEPEND=">=dev-qt/qtcore-5.5:5
+	dev-qt/qtdeclarative:5
 	>=media-video/vlc-2.1
 	"
 DEPEND="${REDEPEND}
