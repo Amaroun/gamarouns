@@ -23,7 +23,7 @@ RDEPEND="
 	virtual/opengl
 	opencl? (
 		virtual/opencl
-		dev-libs/clhpp
+		dev-cpp/clhpp
 		)
 	media-libs/freeglut
 	media-libs/glew

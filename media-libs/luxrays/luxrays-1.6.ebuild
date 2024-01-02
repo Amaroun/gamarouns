@@ -44,7 +44,7 @@ RDEPEND="dev-libs/boost:=[numpy]
 		dev-libs/nativefiledialog-extended
 		)
 	opencl? (
-		dev-libs/clhpp
+		dev-cpp/clhpp
 		virtual/opencl )"
 
 
