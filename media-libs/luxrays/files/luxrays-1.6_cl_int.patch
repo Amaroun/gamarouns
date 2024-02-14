@@ -1,0 +1,21 @@
+diff -NurB a/src/luxrays/core/device.cpp LuxCore-luxrender_v1.6/src/luxrays/core/device.cpp
+--- a/src/luxrays/core/device.cpp	2024-02-14 15:52:23.144813179 +0100
++++ LuxCore-luxrender_v1.6/src/luxrays/core/device.cpp	2024-02-14 16:42:21.751904689 +0100
+@@ -141,13 +141,13 @@
+ 
+ std::string OpenCLDeviceDescription::GetDeviceType(const cl_int type) {
+ 	switch (type) {
+-		case CL_DEVICE_TYPE_ALL:
++		case (cl_int)(CL_DEVICE_TYPE_ALL):
+ 			return "TYPE_ALL";
+-		case CL_DEVICE_TYPE_DEFAULT:
++		case (cl_int)(CL_DEVICE_TYPE_DEFAULT):
+ 			return "TYPE_DEFAULT";
+-		case CL_DEVICE_TYPE_CPU:
++		case (cl_int)(CL_DEVICE_TYPE_CPU):
+ 			return "TYPE_CPU";
+-		case CL_DEVICE_TYPE_GPU:
++		case (cl_int)(CL_DEVICE_TYPE_GPU):
+ 			return "TYPE_GPU";
+ 		default:
+ 			return "TYPE_UNKNOWN";

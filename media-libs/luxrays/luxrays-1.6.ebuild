@@ -66,6 +66,7 @@ PATCHES+=(
 	"${FILESDIR}/${P}_Imath.patch"
 	"${FILESDIR}/${P}_boost_python_bindings.patch"
 	"${FILESDIR}/${P}_luxcoreui_deps.patch"
+	"${FILESDIR}/${P}_cl_int.patch"
 )
 
 src_prepare() {
