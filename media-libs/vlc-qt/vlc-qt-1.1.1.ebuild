@@ -27,5 +27,3 @@ RDEPEND=">=dev-qt/qtcore-5.5:5
 	dev-qt/qtdeclarative:5
 	>=media-video/vlc-2.1
 	"
-DEPEND="${REDEPEND}
-	>=dev-util/cmake-3.0.2"
