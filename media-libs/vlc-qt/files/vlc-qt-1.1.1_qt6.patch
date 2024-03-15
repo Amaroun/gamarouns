@@ -1,0 +1,223 @@
+diff -NurB a/CMakeLists.txt c/CMakeLists.txt
+--- a/CMakeLists.txt	2024-03-15 16:17:34.759073361 +0100
++++ c/CMakeLists.txt	2024-03-15 17:00:16.268095074 +0100
+@@ -16,8 +16,7 @@
+ # along with this library. If not, see <http://www.gnu.org/licenses/>.
+ #############################################################################
+ 
+-CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
+-CMAKE_POLICY(VERSION 3.0.2)
++cmake_minimum_required(VERSION 3.19)
+ 
+ SET(CMAKE_MODULE_PATH
+     ${CMAKE_SOURCE_DIR}/cmake
+@@ -61,7 +60,7 @@
+ #########
+ # Tests #
+ #########
+-IF(QT_VERSION MATCHES 5 AND NOT MOBILE)
++IF(NOT MOBILE)
+     ENABLE_TESTING(true)
+     ADD_SUBDIRECTORY(tests)
+ 
+diff -NurB a/config/Dependencies.cmake c/config/Dependencies.cmake
+--- a/config/Dependencies.cmake	2024-03-15 16:17:34.759073361 +0100
++++ c/config/Dependencies.cmake	2024-03-15 17:00:16.259095074 +0100
+@@ -17,34 +17,29 @@
+ #############################################################################
+ # Qt
+ IF(NOT DEFINED QT_VERSION)
+-    SET(QT_VERSION 5)
++    MESSAGE(FATAL_ERROR "QT_VERSION Required.")
+ ENDIF()
+ 
+-IF(QT_VERSION MATCHES 4)
+-    FIND_PACKAGE(Qt4 4.8.0 REQUIRED)
++IF(QT_VERSION MATCHES 6)
++    find_package(Qt6 COMPONENTS Core Gui Widgets Quick Test QuickTest REQUIRED)
++    MESSAGE(STATUS "Using Qt ${Qt6Core_VERSION}")
++
++ELSEIF(QT_VERSION MATCHES 5)
++    FIND_PACKAGE(Qt5Core 5.5.0 REQUIRED)
++    FIND_PACKAGE(Qt5Quick 5.5.0 REQUIRED)
++    FIND_PACKAGE(Qt5Widgets 5.5.0 REQUIRED)
+ 
+-    MESSAGE(WARNING "Qt4 support is deprecated and will be removed. Please update to Qt 5 soon.")
+-ELSE()
+-    FIND_PACKAGE(Qt5Core 5.2.0 REQUIRED)
+-    FIND_PACKAGE(Qt5Quick 5.2.0 REQUIRED)
+-    FIND_PACKAGE(Qt5Widgets 5.2.0 REQUIRED)
+-
+-    FIND_PACKAGE(Qt5QuickTest 5.2.0 REQUIRED)
+-    FIND_PACKAGE(Qt5Test 5.2.0 REQUIRED)
++    FIND_PACKAGE(Qt5QuickTest 5.5.0 REQUIRED)
++    FIND_PACKAGE(Qt5Test 5.5.0 REQUIRED)
+ 
+-    SET(SYSTEM_QML OFF CACHE BOOL "Install to system QML import path")
+ 
+     MESSAGE(STATUS "Using Qt ${Qt5Core_VERSION}")
+-    MESSAGE(STATUS "Installing to system QML import path: ${SYSTEM_QML}")
+-ENDIF()
+-
+-IF(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND QT_VERSION MATCHES 5 AND Qt5Core_VERSION VERSION_LESS "5.5.0")
+-    MESSAGE(WARNING "Your Qt5 version is old and support for it will be removed. Please update to Qt 5.5 or later soon.")
++ELSE()
++    MESSAGE(FATAL_ERROR "QT_VERSION unsupported: ${QT_VERSION}.")
+ ENDIF()
+ 
+-IF((MINGW OR MSVC) AND QT_VERSION MATCHES 5 AND Qt5Core_VERSION VERSION_LESS "5.5.0")
+-    SET(WITH_GLES OFF CACHE BOOL "Build with OpenGL ES2")
+-ENDIF()
++SET(SYSTEM_QML OFF CACHE BOOL "Install to system QML import path")
++MESSAGE(STATUS "Installing to system QML import path: ${SYSTEM_QML}")
+ 
+ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+     SET(WITH_X11 OFF CACHE BOOL "Link with X11")
+diff -NurB a/src/core/CMakeLists.txt c/src/core/CMakeLists.txt
+--- a/src/core/CMakeLists.txt	2024-03-15 16:17:34.765073361 +0100
++++ c/src/core/CMakeLists.txt	2024-03-15 17:00:16.265095074 +0100
+@@ -180,11 +180,9 @@
+ SYMLINK_FRAMEWORK_TEST(${VLCQT_CORE} core ${VLCQT_CORE_NAME})
+ 
+ # Link the required libraries
+-IF(QT_VERSION MATCHES 4)
+-    TARGET_LINK_LIBRARIES(${VLCQT_CORE} PRIVATE Qt4::QtCore)
+-ELSE()
+-    TARGET_LINK_LIBRARIES(${VLCQT_CORE} PRIVATE Qt5::Core)
+-ENDIF()
++
++TARGET_LINK_LIBRARIES(${VLCQT_CORE} PRIVATE Qt::Core)
++
+ IF(NOT STATIC)
+     TARGET_LINK_LIBRARIES(${VLCQT_CORE} PRIVATE ${LIBVLC_LIBRARY} ${LIBVLCCORE_LIBRARY})
+ ENDIF()
+diff -NurB a/src/core/Common.cpp c/src/core/Common.cpp
+--- a/src/core/Common.cpp	2024-03-15 16:17:34.765073361 +0100
++++ c/src/core/Common.cpp	2024-03-15 17:00:16.263095074 +0100
+@@ -24,7 +24,7 @@
+ 
+     QString args = qgetenv("VLC_ARGS");
+     if (!args.isEmpty())
+-        args_list << args.split(" ", QString::SkipEmptyParts);
++        args_list << args.split(" ", Qt::SkipEmptyParts);
+     else {
+         args_list << "--intf=dummy"
+                   << "--no-media-library"
+diff -NurB a/src/widgets/CMakeLists.txt c/src/widgets/CMakeLists.txt
+--- a/src/widgets/CMakeLists.txt	2024-03-15 16:17:34.767073361 +0100
++++ c/src/widgets/CMakeLists.txt	2024-03-15 17:00:16.266095074 +0100
+@@ -92,12 +92,9 @@
+ 
+ SYMLINK_FRAMEWORK_TEST(${VLCQT_WIDGETS} widgets ${VLCQT_WIDGETS_NAME})
+ 
+-# Link the required libraries
+-IF(QT_VERSION MATCHES 4)
+-    TARGET_LINK_LIBRARIES(${VLCQT_WIDGETS} PRIVATE ${VLCQT_CORE} Qt4::QtGui)
+-ELSE()
+-    TARGET_LINK_LIBRARIES(${VLCQT_WIDGETS} PRIVATE ${VLCQT_CORE} Qt5::Widgets)
+-ENDIF()
++TARGET_LINK_LIBRARIES(${VLCQT_WIDGETS} PRIVATE ${VLCQT_CORE} Qt::Core)
++TARGET_LINK_LIBRARIES(${VLCQT_WIDGETS} PRIVATE ${VLCQT_CORE} Qt::Gui)
++TARGET_LINK_LIBRARIES(${VLCQT_WIDGETS} PRIVATE ${VLCQT_CORE} Qt::Widgets)
+ 
+ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND WITH_X11)
+     TARGET_LINK_LIBRARIES(${VLCQT_WIDGETS} PRIVATE -lX11)
+diff -NurB a/src/widgets/ControlAudio.cpp c/src/widgets/ControlAudio.cpp
+--- a/src/widgets/ControlAudio.cpp	2024-03-15 16:17:34.767073361 +0100
++++ c/src/widgets/ControlAudio.cpp	2024-03-15 17:00:16.266095074 +0100
+@@ -16,13 +16,9 @@
+ * along with this library. If not, see <http://www.gnu.org/licenses/>.
+ *****************************************************************************/
+ 
+-#include <QtCore/QTimer>
++#include <QTimer>
+ 
+-#if QT_VERSION >= 0x050000
+-#include <QtWidgets/QAction>
+-#else
+-#include <QtGui/QAction>
+-#endif
++#include <QAction>
+ 
+ #include "core/Audio.h"
+ #include "core/MediaPlayer.h"
+diff -NurB a/src/widgets/ControlAudio.h c/src/widgets/ControlAudio.h
+--- a/src/widgets/ControlAudio.h	2024-03-15 16:17:34.767073361 +0100
++++ c/src/widgets/ControlAudio.h	2024-03-15 17:00:16.266095074 +0100
+@@ -19,8 +19,8 @@
+ #ifndef VLCQT_CONTROLAUDIO_H_
+ #define VLCQT_CONTROLAUDIO_H_
+ 
+-#include <QtCore/QList>
+ #include <QtCore/QMap>
++#include <QtCore/QList>
+ 
+ #include <VLCQtCore/Enums.h>
+ 
+diff -NurB a/src/widgets/ControlVideo.cpp c/src/widgets/ControlVideo.cpp
+--- a/src/widgets/ControlVideo.cpp	2024-03-15 16:17:34.767073361 +0100
++++ c/src/widgets/ControlVideo.cpp	2024-03-15 17:00:16.266095074 +0100
+@@ -18,11 +18,7 @@
+ 
+ #include <QtCore/QTimer>
+ 
+-#if QT_VERSION >= 0x050000
+-#include <QtWidgets/QAction>
+-#else
+-#include <QtGui/QAction>
+-#endif
++#include <QAction>
+ 
+ #include "core/Error.h"
+ #include "core/MediaPlayer.h"
+diff -NurB a/src/widgets/WidgetSeekProgress.cpp c/src/widgets/WidgetSeekProgress.cpp
+--- a/src/widgets/WidgetSeekProgress.cpp	2024-03-15 16:17:34.767073361 +0100
++++ c/src/widgets/WidgetSeekProgress.cpp	2024-03-15 17:00:16.266095074 +0100
+@@ -80,7 +80,7 @@
+     if (!_vlcMediaPlayer)
+         return;
+ 
+-    if (event->delta() > 0)
++    if (event->angleDelta().y() > 0)
+         _vlcMediaPlayer->setTime(_vlcMediaPlayer->time() + _vlcMediaPlayer->length() * 0.01);
+     else
+         _vlcMediaPlayer->setTime(_vlcMediaPlayer->time() - _vlcMediaPlayer->length() * 0.01);
+diff -NurB a/src/widgets/WidgetVideo.cpp c/src/widgets/WidgetVideo.cpp
+--- a/src/widgets/WidgetVideo.cpp	2024-03-15 16:17:34.767073361 +0100
++++ c/src/widgets/WidgetVideo.cpp	2024-03-15 17:00:16.266095074 +0100
+@@ -20,7 +20,6 @@
+ 
+ #if QT_VERSION >= 0x050000
+ #include <QtWidgets/QApplication>
+-#include <QtWidgets/QDesktopWidget>
+ #include <QtWidgets/QHBoxLayout>
+ #include <QtWidgets/QToolBar>
+ #else
+diff -NurB a/tests/CMakeLists.txt c/tests/CMakeLists.txt
+--- a/tests/CMakeLists.txt	2024-03-15 16:17:34.768073361 +0100
++++ c/tests/CMakeLists.txt	2024-03-15 17:00:16.267095074 +0100
+@@ -24,11 +24,12 @@
+ 
+     ADD_EXECUTABLE(Test_${TestName} ${Test_${TestName}_Srcs})
+     ADD_DEPENDENCIES(Test_${TestName} ${VLCQT_CORE})
+-    TARGET_LINK_LIBRARIES(Test_${TestName} Qt5::Core Qt5::Test ${VLCQT_CORE})
++    TARGET_LINK_LIBRARIES(Test_${TestName} Qt::Core Qt::Test ${VLCQT_CORE})
+ 
+     IF(${TestName} MATCHES "Qml")
+-        ADD_DEPENDENCIES(Test_${TestName} ${VLCQT_QML})
+-        TARGET_LINK_LIBRARIES(Test_${TestName} Qt5::QuickTest ${VLCQT_QML})
++#        ADD_DEPENDENCIES(Test_${TestName} ${VLCQT_QML})
++        TARGET_LINK_LIBRARIES(Test_${TestName} Qt::QuickTest Qt::Quick)
++# ${VLCQT_QML})
+         IF(STATIC)
+             TARGET_LINK_LIBRARIES(Test_${TestName} ${VLCQT_PLUGIN_QML})
+         ENDIF()
+@@ -36,7 +37,7 @@
+ 
+     IF(${TestName} MATCHES "Widgets")
+         ADD_DEPENDENCIES(Test_${TestName} ${VLCQT_WIDGETS})
+-        TARGET_LINK_LIBRARIES(Test_${TestName} Qt5::Widgets ${VLCQT_WIDGETS})
++        TARGET_LINK_LIBRARIES(Test_${TestName} Qt::Widgets ${VLCQT_WIDGETS})
+     ENDIF()
+ 
+     IF(STATIC)
